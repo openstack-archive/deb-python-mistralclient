@@ -1,0 +1,5 @@
+python-mistralclient (2015.1~b3-1) experimental; urgency=medium
+
+  * Initial release. (Closes: #781149).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 19 Feb 2015 19:36:19 +0100

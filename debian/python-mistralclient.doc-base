@@ -1,0 +1,9 @@
+Document: mistralclient-doc
+Title: mistralclient Documentation
+Author: N/A
+Abstract: Sphinx documentation for mistralclient
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python-mistralclient/html/index.html
+Files: /usr/share/doc/python-mistralclient/html/*

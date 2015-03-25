@@ -1,0 +1,51 @@
+Source: python-mistralclient
+Section: python
+Priority: extra
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Thomas Goirand <zigo@debian.org>
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               openstack-pkg-tools,
+               python-all (>= 2.6.6-3~),
+               python-pbr,
+               python-setuptools,
+               python-sphinx
+Build-Depends-Indep: python-cliff (>= 1.7.0),
+                     python-fixtures (>= 0.3.14),
+                     python-hacking,
+                     python-keystoneclient (>= 1:0.10.0),
+                     python-lockfile (>= 0.8),
+                     python-mock (>= 1.0),
+                     python-nose,
+                     python-requests (>= 1.2.1),
+                     python-tempest-lib (>= 0.3.0),
+                     python-testtools (>= 0.9.34),
+                     python-unittest2,
+                     python-yaml (>= 3.1.0)
+Standards-Version: 3.9.6
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-mistralclient.git
+Vcs-Git: git://anonscm.debian.org/openstack/python-mistralclient.git
+Homepage: https://github.com/stackforge/python-mistralclient
+
+Package: python-mistralclient
+Architecture: all
+Depends: python-cliff (>= 1.7.0),
+         python-keystoneclient (>= 1:0.10.0),
+         python-requests (>= 1.2.1),
+         python-yaml (>= 3.1.0),
+         ${misc:Depends},
+         ${python:Depends}
+Description: OpenStack Workflow as a Service client - Python 2.x
+ Mistral is a task management service. It is also known as Workflow as a
+ Service. Most business processes consist of multiple distinct interconnected
+ steps that need to be executed in a particular order in a distributed
+ environment. One can describe such process as a set of tasks and task
+ relations and upload such description to Mistral so that it takes care of
+ state management, correct execution order, task distribution and high
+ availability. Mistral also provides flexible task scheduling so that we can
+ run a process according to a specified schedule (i.e. every Sunday at 4.00pm)
+ instead of running it immediately. We call such set of tasks and dependencies
+ between them a workflow. Independent routes in a workflow (which, in fact, is
+ a graph) are called flows and Mistral can execute them in parallel.
+ .
+ This package provides a cli and a Python 2.x client module.

@@ -1,0 +1,42 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: python-mistralclient
+Source: git://github.com/stackforge/python-mistralclient.git
+
+Files: debian/*
+Copyright: (c) 2015, Thomas Goirand <zigo@debian.org>
+License: Apache-2
+
+Files: *
+Copyright: (c) 2010, Jacob Kaplan-Moss
+           (c) 2010, United States Government as represented by NASA
+           (c) 2011, Nebula, Inc.
+           (c) 2012-2015, Grid Dynamics
+           (c) 2013, Alessio Ababilov
+           (c) 2013, IBM Corp.
+           (c) 2013, Spanish National Research Council.
+           (c) 2014-2015, Rackspace Hosting
+           (c) 2014-2015, StackStorm, Inc.
+           (c) 2012-2013, AT&T Labs, Yun Mao <yunmao@gmail.com>
+           (c) 2012, Intel Corporation.
+           (c) 2013, Hewlett-Packard Development Company, L.P.
+           (c) 2010-2015, OpenStack Foundation <openstack-dev@lists.openstack.org>
+           (c) 2013-2015, Mirantis, Inc.
+           (c) 2012-2015, Red Hat, Inc.
+           (c) 2011-2015, Piston Cloud Computing, Inc.
+License: Apache-2
+
+License: Apache-2
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+    http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license
+ can be found in /usr/share/common-licenses/Apache-2.0.
