@@ -1,4 +1,4 @@
-python-mistralclient (2015.1~b3-1) experimental; urgency=medium
+python-mistralclient (2015.1~rc1-1) experimental; urgency=medium
 
   * Initial release. (Closes: #781149).
 

@@ -6,22 +6,22 @@ Uploaders: Thomas Goirand <zigo@debian.org>
 Build-Depends: debhelper (>= 9),
                dh-python,
                openstack-pkg-tools,
-               python-all (>= 2.6.6-3~),
+               python-all,
                python-pbr,
                python-setuptools,
-               python-sphinx
-Build-Depends-Indep: python-cliff (>= 1.7.0),
-                     python-fixtures (>= 0.3.14),
+               python-sphinx,
+Build-Depends-Indep: python-cliff,
+                     python-fixtures,
                      python-hacking,
-                     python-keystoneclient (>= 1:0.10.0),
-                     python-lockfile (>= 0.8),
-                     python-mock (>= 1.0),
+                     python-keystoneclient,
+                     python-lockfile,
+                     python-mock,
                      python-nose,
-                     python-requests (>= 1.2.1),
-                     python-tempest-lib (>= 0.3.0),
-                     python-testtools (>= 0.9.34),
+                     python-requests,
+                     python-tempest-lib,
+                     python-testtools,
                      python-unittest2,
-                     python-yaml (>= 3.1.0)
+                     python-yaml,
 Standards-Version: 3.9.6
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-mistralclient.git
 Vcs-Git: git://anonscm.debian.org/openstack/python-mistralclient.git
@@ -29,12 +29,12 @@ Homepage: https://github.com/stackforge/python-mistralclient
 
 Package: python-mistralclient
 Architecture: all
-Depends: python-cliff (>= 1.7.0),
-         python-keystoneclient (>= 1:0.10.0),
-         python-requests (>= 1.2.1),
-         python-yaml (>= 3.1.0),
+Depends: python-cliff,
+         python-keystoneclient,
+         python-requests,
+         python-yaml,
          ${misc:Depends},
-         ${python:Depends}
+         ${python:Depends},
 Description: OpenStack Workflow as a Service client - Python 2.x
  Mistral is a task management service. It is also known as Workflow as a
  Service. Most business processes consist of multiple distinct interconnected
