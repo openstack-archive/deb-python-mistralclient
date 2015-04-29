@@ -13,6 +13,9 @@
 # under the License.
 
 import os
+import time
+
+from tempest_lib import exceptions
 
 from mistralclient.tests.functional.cli import base
 
@@ -115,12 +118,20 @@ class MistralClientTestBase(base.MistralCLIAuth, base.MistralCLIAltAuth):
 
         return acts
 
-    def cron_trigger_create(self, name, pattern,
-                            wf_name, wf_input, admin=True):
+    def cron_trigger_create(self, name, wf_name, wf_input, pattern=None,
+                            count=None, first_time=None, admin=True):
+        optional_params = ""
+        if pattern:
+            optional_params += ' --pattern "{}"'.format(pattern)
+        if count:
+            optional_params += ' --count {}'.format(count)
+        if first_time:
+            optional_params += ' --first-time "{}"'.format(first_time)
         trigger = self.mistral_cli(
             admin,
             'cron-trigger-create',
-            params='%s "%s" %s %s' % (name, pattern, wf_name, wf_input))
+            params='{} {} {} {}'.format(name, wf_name, wf_input,
+                                        optional_params))
         self.addCleanup(self.mistral_cli,
                         admin,
                         'cron-trigger-delete',
@@ -153,3 +164,29 @@ class MistralClientTestBase(base.MistralCLIAuth, base.MistralCLIAltAuth):
         f.write(file_body)
         f.close()
         self.addCleanup(os.remove, file_name)
+
+    def wait_execution_success(self, exec_id, timeout=180):
+        start_time = time.time()
+
+        ex = self.mistral_admin('execution-get', params=exec_id)
+        exec_state = self.get_value_of_field(ex, 'State')
+
+        expected_states = ['SUCCESS', 'RUNNING']
+
+        while exec_state != 'SUCCESS':
+            if time.time() - start_time > timeout:
+                msg = ("Execution exceeds timeout {0} to change state "
+                       "to SUCCESS. Execution: {1}".format(timeout, ex))
+                raise exceptions.TimeoutException(msg)
+
+            ex = self.mistral_admin('execution-get', params=exec_id)
+            exec_state = self.get_value_of_field(ex, 'State')
+
+            if exec_state not in expected_states:
+                msg = ("Execution state %s is not in expected "
+                       "states: %s" % (exec_state, expected_states))
+                raise exceptions.TempestException(msg)
+
+            time.sleep(2)
+
+        return True

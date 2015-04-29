@@ -1,18 +1,16 @@
-# Copyright 2015 StackStorm, Inc.
-# All Rights Reserved
+# Copyright 2015 - StackStorm, Inc.
 #
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#         http://www.apache.org/licenses/LICENSE-2.0
+#        http://www.apache.org/licenses/LICENSE-2.0
 #
 #    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
-#
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 
 """
 Command-line interface to the Mistral APIs
@@ -22,9 +20,7 @@ import logging
 import sys
 
 from mistralclient.api import client
-import mistralclient.commands.v1.executions
-import mistralclient.commands.v1.tasks
-import mistralclient.commands.v1.workbooks
+import mistralclient.commands.v2.action_executions
 import mistralclient.commands.v2.actions
 import mistralclient.commands.v2.cron_triggers
 import mistralclient.commands.v2.environments
@@ -182,8 +178,10 @@ class MistralShell(app.App):
 
     def initialize_app(self, argv):
         self._clear_shell_commands()
-        self._set_shell_commands(self._get_commands(
-            client.determine_client_version(self.options.mistral_url)))
+
+        ver = client.determine_client_version(self.options.mistral_url)
+
+        self._set_shell_commands(self._get_commands(ver))
 
         self.client = client.client(mistral_url=self.options.mistral_url,
                                     username=self.options.username,
@@ -209,32 +207,10 @@ class MistralShell(app.App):
                 self.command_manager.commands.pop(k)
 
     def _get_commands(self, version):
-        if version == 1:
-            return self._get_commands_v1()
-        else:
+        if version == 2:
             return self._get_commands_v2()
 
-    @staticmethod
-    def _get_commands_v1():
-        return {
-            'workbook-list': mistralclient.commands.v1.workbooks.List,
-            'workbook-get': mistralclient.commands.v1.workbooks.Get,
-            'workbook-create': mistralclient.commands.v1.workbooks.Create,
-            'workbook-delete': mistralclient.commands.v1.workbooks.Delete,
-            'workbook-update': mistralclient.commands.v1.workbooks.Update,
-            'workbook-upload-definition':
-            mistralclient.commands.v1.workbooks.UploadDefinition,
-            'workbook-get-definition':
-            mistralclient.commands.v1.workbooks.GetDefinition,
-            'execution-list': mistralclient.commands.v1.executions.List,
-            'execution-get': mistralclient.commands.v1.executions.Get,
-            'execution-create': mistralclient.commands.v1.executions.Create,
-            'execution-delete': mistralclient.commands.v1.executions.Delete,
-            'execution-update': mistralclient.commands.v1.executions.Update,
-            'task-list': mistralclient.commands.v1.tasks.List,
-            'task-get': mistralclient.commands.v1.tasks.Get,
-            'task-update': mistralclient.commands.v1.tasks.Update,
-        }
+        return {}
 
     @staticmethod
     def _get_commands_v2():
@@ -246,6 +222,7 @@ class MistralShell(app.App):
             'workbook-update': mistralclient.commands.v2.workbooks.Update,
             'workbook-get-definition':
             mistralclient.commands.v2.workbooks.GetDefinition,
+            'workbook-validate': mistralclient.commands.v2.workbooks.Validate,
             'workflow-list': mistralclient.commands.v2.workflows.List,
             'workflow-get': mistralclient.commands.v2.workflows.Get,
             'workflow-create': mistralclient.commands.v2.workflows.Create,
@@ -253,6 +230,7 @@ class MistralShell(app.App):
             'workflow-update': mistralclient.commands.v2.workflows.Update,
             'workflow-get-definition':
             mistralclient.commands.v2.workflows.GetDefinition,
+            'workflow-validate': mistralclient.commands.v2.workflows.Validate,
             'environment-create':
             mistralclient.commands.v2.environments.Create,
             'environment-delete':
@@ -261,6 +239,16 @@ class MistralShell(app.App):
             mistralclient.commands.v2.environments.Update,
             'environment-list': mistralclient.commands.v2.environments.List,
             'environment-get': mistralclient.commands.v2.environments.Get,
+            'action-execution-list':
+            mistralclient.commands.v2.action_executions.List,
+            'action-execution-get':
+            mistralclient.commands.v2.action_executions.Get,
+            'action-execution-get-input':
+            mistralclient.commands.v2.action_executions.GetInput,
+            'action-execution-get-output':
+            mistralclient.commands.v2.action_executions.GetOutput,
+            'action-execution-update':
+            mistralclient.commands.v2.action_executions.Update,
             'execution-create': mistralclient.commands.v2.executions.Create,
             'execution-delete': mistralclient.commands.v2.executions.Delete,
             'execution-update': mistralclient.commands.v2.executions.Update,
@@ -272,9 +260,8 @@ class MistralShell(app.App):
             mistralclient.commands.v2.executions.GetOutput,
             'task-list': mistralclient.commands.v2.tasks.List,
             'task-get': mistralclient.commands.v2.tasks.Get,
-            'task-get-input': mistralclient.commands.v2.tasks.GetInput,
+            'task-get-published': mistralclient.commands.v2.tasks.GetPublished,
             'task-get-result': mistralclient.commands.v2.tasks.GetResult,
-            'task-update': mistralclient.commands.v2.tasks.Update,
             'action-list': mistralclient.commands.v2.actions.List,
             'action-get': mistralclient.commands.v2.actions.Get,
             'action-create': mistralclient.commands.v2.actions.Create,

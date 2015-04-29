@@ -26,39 +26,38 @@ TASK_DICT = {
     'id': '123',
     'name': 'some',
     'workflow_name': 'thing',
-    'execution_id': '321',
+    'workflow_execution_id': '321',
     'state': 'RUNNING',
 }
 
 TASK_RESULT = {"test": "is", "passed": "successfully"}
-TASK_INPUT = {"param1": "val1", "param2": 2}
+TASK_PUBLISHED = {"bar1": "val1", "var2": 2}
 
 TASK_WITH_RESULT_DICT = TASK_DICT.copy()
 TASK_WITH_RESULT_DICT.update({'result': json.dumps(TASK_RESULT)})
-TASK_WITH_INPUT_DICT = TASK_DICT.copy()
-TASK_WITH_INPUT_DICT.update({'input': json.dumps(TASK_INPUT)})
+TASK_WITH_PUBLISHED_DICT = TASK_DICT.copy()
+TASK_WITH_PUBLISHED_DICT.update({'published': json.dumps(TASK_PUBLISHED)})
 
 TASK = tasks.Task(mock, TASK_DICT)
 TASK_WITH_RESULT = tasks.Task(mock, TASK_WITH_RESULT_DICT)
-TASK_WITH_INPUT = tasks.Task(mock, TASK_WITH_INPUT_DICT)
+TASK_WITH_PUBLISHED = tasks.Task(mock, TASK_WITH_PUBLISHED_DICT)
 
 
-class TestCLIT1asksV2(base.BaseCommandTest):
-    @mock.patch('mistralclient.api.v2.tasks.TaskManager.update')
-    def test_update(self, mock):
-        mock.return_value = TASK
-
-        result = self.call(task_cmd.Update,
-                           app_args=['id', 'ERROR'])
-
-        self.assertEqual(('123', 'some', 'thing', '321', 'RUNNING'),
-                         result[1])
-
+class TestCLITasksV2(base.BaseCommandTest):
     @mock.patch('mistralclient.api.v2.tasks.TaskManager.list')
     def test_list(self, mock):
         mock.return_value = (TASK,)
 
         result = self.call(task_cmd.List)
+
+        self.assertEqual([('123', 'some', 'thing', '321', 'RUNNING')],
+                         result[1])
+
+    @mock.patch('mistralclient.api.v2.tasks.TaskManager.list')
+    def test_list_with_workflow_execution(self, mock):
+        mock.return_value = (TASK,)
+
+        result = self.call(task_cmd.List, app_args=['workflow_execution'])
 
         self.assertEqual([('123', 'some', 'thing', '321', 'RUNNING')],
                          result[1])
@@ -82,11 +81,11 @@ class TestCLIT1asksV2(base.BaseCommandTest):
             json.dumps(TASK_RESULT, indent=4) + "\n")
 
     @mock.patch('mistralclient.api.v2.tasks.TaskManager.get')
-    def test_get_input(self, mock):
-        mock.return_value = TASK_WITH_INPUT
+    def test_get_published(self, mock):
+        mock.return_value = TASK_WITH_PUBLISHED
 
-        self.call(task_cmd.GetInput, app_args=['id'])
+        self.call(task_cmd.GetPublished, app_args=['id'])
 
         self.app.stdout.write.assert_called_with(
-            json.dumps(TASK_INPUT, indent=4) + "\n"
+            json.dumps(TASK_PUBLISHED, indent=4) + "\n"
         )

@@ -224,7 +224,7 @@ class CronTriggerIsolationCLITests(base_v2.MistralClientTestBase):
     def test_cron_trigger_name_uniqueness(self):
         wf = self.workflow_create(self.wf_def)
         self.cron_trigger_create(
-            "trigger", "5 * * * *", wf[0]["Name"], "{}")
+            "trigger", wf[0]["Name"], "{}", "5 * * * *")
 
         self.assertRaises(
             exceptions.CommandFailed,
@@ -236,23 +236,20 @@ class CronTriggerIsolationCLITests(base_v2.MistralClientTestBase):
         )
 
         wf = self.workflow_create(self.wf_def, admin=False)
-        self.cron_trigger_create(
-            "trigger", "5 * * * *", wf[0]["Name"], "{}", admin=False)
+        self.cron_trigger_create("trigger", wf[0]["Name"], "{}", "5 * * * *",
+                                 None, None, admin=False)
 
         self.assertRaises(
             exceptions.CommandFailed,
             self.cron_trigger_create,
-            "trigger",
-            "5 * * * *",
-            wf[0]["Name"],
-            "{}",
-            admin=False
+            "trigger", wf[0]["Name"], "{}", "5 * * * *",
+            None, None, admin=False
         )
 
     def test_cron_trigger_isolation(self):
         wf = self.workflow_create(self.wf_def)
         self.cron_trigger_create(
-            "trigger", "5 * * * *", wf[0]["Name"], "{}")
+            "trigger", wf[0]["Name"], "{}", "5 * * * *")
 
         alt_trs = self.mistral_alt_user("cron-trigger-list")
 
@@ -347,4 +344,31 @@ class EnvironmentIsolationCLITests(base_v2.MistralClientTestBase):
             self.mistral_alt_user,
             "environment-delete",
             params=env_name
+        )
+
+
+class ActionExecutionIsolationCLITests(base_v2.MistralClientTestBase):
+
+    def test_action_execution_isolation(self):
+        wf = self.workflow_create(self.wf_def)
+        self.execution_create(wf[0]["Name"])
+
+        act_execs = self.mistral_admin("action-execution-list")
+        self.assertIn(wf[0]["Name"],
+                      [act["Workflow name"] for act in act_execs])
+
+        alt_act_execs = self.mistral_alt_user("action-execution-list")
+        self.assertNotIn(wf[0]["Name"],
+                         [act["Workflow name"] for act in alt_act_execs])
+
+    def test_get_action_execution_from_another_tenant(self):
+        wf = self.workflow_create(self.wf_def)
+        ex = self.execution_create(wf[0]["Name"])
+        exec_id = self.get_value_of_field(ex, "ID")
+
+        self.assertRaises(
+            exceptions.CommandFailed,
+            self.mistral_alt_user,
+            "action-execution-get",
+            params=exec_id
         )
