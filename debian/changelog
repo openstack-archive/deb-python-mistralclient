@@ -1,3 +1,10 @@
+python-mistralclient (2015.1.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 04 May 2015 20:11:37 +0000
+
 python-mistralclient (2015.1~rc1-1) experimental; urgency=medium
 
   * Initial release. (Closes: #781149).
