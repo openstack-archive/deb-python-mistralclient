@@ -42,10 +42,10 @@ Description: OpenStack Workflow as a Service client - Python 2.x
  environment. One can describe such process as a set of tasks and task
  relations and upload such description to Mistral so that it takes care of
  state management, correct execution order, task distribution and high
- availability. Mistral also provides flexible task scheduling so that we can
+ availability. Mistral also provides flexible task scheduling so that users can
  run a process according to a specified schedule (i.e. every Sunday at 4.00pm)
- instead of running it immediately. We call such set of tasks and dependencies
- between them a workflow. Independent routes in a workflow (which, in fact, is
- a graph) are called flows and Mistral can execute them in parallel.
+ instead of running it immediately. Such set of tasks and dependencies between
+ them is called a workflow. Independent routes in a workflow (which, in fact,
+ is a graph) are called flows and Mistral can execute them in parallel.
  .
  This package provides a cli and a Python 2.x client module.
