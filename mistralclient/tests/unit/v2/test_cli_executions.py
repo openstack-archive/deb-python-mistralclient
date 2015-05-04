@@ -25,6 +25,7 @@ EXECUTION = executions.Execution(mock, {
     'id': '123',
     'workflow_name': 'some',
     'state': 'RUNNING',
+    'state_info': None,
     'created_at': '1',
     'updated_at': '1'
 })
@@ -38,7 +39,7 @@ class TestCLIExecutionsV2(base.BaseCommandTest):
         result = self.call(execution_cmd.Create,
                            app_args=['id', '{ "context": true }'])
 
-        self.assertEqual(('123', 'some', 'RUNNING',
+        self.assertEqual(('123', 'some', 'RUNNING', None,
                           '1', '1'), result[1])
 
     @mock.patch('mistralclient.api.v2.executions.ExecutionManager.create')
@@ -49,7 +50,7 @@ class TestCLIExecutionsV2(base.BaseCommandTest):
         result = self.call(execution_cmd.Create,
                            app_args=['id', path])
 
-        self.assertEqual(('123', 'some', 'RUNNING',
+        self.assertEqual(('123', 'some', 'RUNNING', None,
                           '1', '1'), result[1])
 
     @mock.patch('mistralclient.api.v2.executions.ExecutionManager.update')
@@ -59,7 +60,7 @@ class TestCLIExecutionsV2(base.BaseCommandTest):
         result = self.call(execution_cmd.Update,
                            app_args=['id', 'SUCCESS'])
 
-        self.assertEqual(('123', 'some', 'RUNNING',
+        self.assertEqual(('123', 'some', 'RUNNING', None,
                           '1', '1'), result[1])
 
     @mock.patch('mistralclient.api.v2.executions.ExecutionManager.list')
@@ -68,7 +69,7 @@ class TestCLIExecutionsV2(base.BaseCommandTest):
 
         result = self.call(execution_cmd.List)
 
-        self.assertEqual([('123', 'some', 'RUNNING',
+        self.assertEqual([('123', 'some', 'RUNNING', None,
                           '1', '1')], result[1])
 
     @mock.patch('mistralclient.api.v2.executions.ExecutionManager.get')
@@ -77,11 +78,21 @@ class TestCLIExecutionsV2(base.BaseCommandTest):
 
         result = self.call(execution_cmd.Get, app_args=['id'])
 
-        self.assertEqual(('123', 'some', 'RUNNING',
+        self.assertEqual(('123', 'some', 'RUNNING', None,
                           '1', '1'), result[1])
 
     @mock.patch('mistralclient.api.v2.executions.ExecutionManager.delete')
-    def test_delete(self, mock):
-        result = self.call(execution_cmd.Delete, app_args=['id'])
+    def test_delete(self, del_mock):
+        self.call(execution_cmd.Delete, app_args=['id'])
 
-        self.assertIsNone(result)
+        del_mock.assert_called_once_with('id')
+
+    @mock.patch('mistralclient.api.v2.executions.ExecutionManager.delete')
+    def test_delete_with_multi_names(self, del_mock):
+        self.call(execution_cmd.Delete, app_args=['id1', 'id2'])
+
+        self.assertEqual(2, del_mock.call_count)
+        self.assertEqual(
+            [mock.call('id1'), mock.call('id2')],
+            del_mock.call_args_list
+        )

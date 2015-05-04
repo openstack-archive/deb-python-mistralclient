@@ -22,25 +22,35 @@ from cliff import show
 
 from mistralclient.api.v2 import executions
 from mistralclient.commands.v2 import base
+from mistralclient import utils
 
 LOG = logging.getLogger(__name__)
 
 
-def format(execution=None):
+def format_list(execution=None):
+    return format(execution, lister=True)
+
+
+def format(execution=None, lister=False):
     columns = (
         'ID',
         'Workflow',
         'State',
+        'State info',
         'Created at',
         'Updated at'
     )
     # TODO(nmakhotkin) Add parent task id when it's implemented in API.
 
     if execution:
+        state_info = (execution.state_info if not lister
+                      else base.cut(execution.state_info))
+
         data = (
             execution.id,
             execution.workflow_name,
             execution.state,
+            state_info,
             execution.created_at,
             execution.updated_at or '<none>'
         )
@@ -54,7 +64,7 @@ class List(base.MistralLister):
     """List all executions."""
 
     def _get_format_function(self):
-        return format
+        return format_list
 
     def _get_resources(self, parsed_args):
         return executions.ExecutionManager(self.app.client).list()
@@ -131,12 +141,22 @@ class Delete(command.Command):
     def get_parser(self, prog_name):
         parser = super(Delete, self).get_parser(prog_name)
 
-        parser.add_argument('id', help='Execution identifier')
+        parser.add_argument(
+            'id',
+            nargs='+',
+            help='Id of execution identifier(s).'
+        )
 
         return parser
 
     def take_action(self, parsed_args):
-        executions.ExecutionManager(self.app.client).delete(parsed_args.id)
+        exe_mgr = executions.ExecutionManager(self.app.client)
+        utils.do_action_on_many(
+            lambda s: exe_mgr.delete(s),
+            parsed_args.id,
+            "Request to delete execution %s has been accepted.",
+            "Unable to delete the specified execution(s)."
+        )
 
 
 class Update(show.ShowOne):
