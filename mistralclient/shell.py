@@ -31,6 +31,7 @@ import mistralclient.commands.v2.workflows
 from mistralclient.openstack.common import cliutils as c
 
 from cliff import app
+from cliff import command
 from cliff import commandmanager
 
 import argparse
@@ -78,6 +79,22 @@ class HelpAction(argparse.Action):
             app.stdout.write('  %s  %s\n' % (name.ljust(max_len), one_liner))
 
         sys.exit(0)
+
+
+class BashCompletionCommand(command.Command):
+    """Prints all of the commands and options for bash-completion."""
+
+    def take_action(self, parsed_args):
+        commands = set()
+        options = set()
+
+        for option, _action in self.app.parser._option_string_actions.items():
+            options.add(option)
+
+        for command_name, _cmd in self.app.command_manager:
+            commands.add(command_name)
+
+        print(' '.join(commands | options))
 
 
 class MistralShell(app.App):
@@ -163,9 +180,34 @@ class MistralShell(app.App):
             '--os-mistral-url',
             action='store',
             dest='mistral_url',
-            default=c.env('OS_MISTRAL_URL',
-                          default='http://localhost:8989/v2'),
+            default=c.env('OS_MISTRAL_URL'),
             help='Mistral API host (Env: OS_MISTRAL_URL)'
+        )
+        parser.add_argument(
+            '--os-mistral-version',
+            action='store',
+            dest='mistral_version',
+            default=c.env('OS_MISTRAL_VERSION', default='v2'),
+            help='Mistral API version (default = v2) (Env: '
+                 'OS_MISTRAL_VERSION)'
+        )
+        parser.add_argument(
+            '--os-mistral-service-type',
+            action='store',
+            dest='service_type',
+            default=c.env('OS_MISTRAL_SERVICE_TYPE', default='workflowv2'),
+            help='Mistral service-type (should be the same name as in '
+                 'keystone-endpoint) (default = workflowv2) (Env: '
+                 'OS_MISTRAL_SERVICE_TYPE)'
+        )
+        parser.add_argument(
+            '--os-mistral-endpoint-type',
+            action='store',
+            dest='endpoint_type',
+            default=c.env('OS_MISTRAL_ENDPOINT_TYPE', default='publicURL'),
+            help='Mistral endpoint-type (should be the same name as in '
+                 'keystone-endpoint) (default = publicURL) (Env: '
+                 'OS_MISTRAL_ENDPOINT_TYPE)'
         )
         parser.add_argument(
             '--os-username',
@@ -221,7 +263,7 @@ class MistralShell(app.App):
     def initialize_app(self, argv):
         self._clear_shell_commands()
 
-        ver = client.determine_client_version(self.options.mistral_url)
+        ver = client.determine_client_version(self.options.mistral_version)
 
         self._set_shell_commands(self._get_commands(ver))
 
@@ -231,8 +273,8 @@ class MistralShell(app.App):
                                     project_name=self.options.tenant_name,
                                     auth_url=self.options.auth_url,
                                     project_id=self.options.tenant_id,
-                                    endpoint_type='publicURL',
-                                    service_type='workflow',
+                                    endpoint_type=self.options.endpoint_type,
+                                    service_type=self.options.service_type,
                                     auth_token=self.options.token,
                                     cacert=self.options.cacert)
 
@@ -257,6 +299,7 @@ class MistralShell(app.App):
     @staticmethod
     def _get_commands_v2():
         return {
+            'bash-completion': BashCompletionCommand,
             'workbook-list': mistralclient.commands.v2.workbooks.List,
             'workbook-get': mistralclient.commands.v2.workbooks.Get,
             'workbook-create': mistralclient.commands.v2.workbooks.Create,
@@ -281,6 +324,7 @@ class MistralShell(app.App):
             mistralclient.commands.v2.environments.Update,
             'environment-list': mistralclient.commands.v2.environments.List,
             'environment-get': mistralclient.commands.v2.environments.Get,
+            'run-action': mistralclient.commands.v2.action_executions.Create,
             'action-execution-list':
             mistralclient.commands.v2.action_executions.List,
             'action-execution-get':
