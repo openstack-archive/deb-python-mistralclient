@@ -25,6 +25,7 @@ import mistralclient.commands.v2.actions
 import mistralclient.commands.v2.cron_triggers
 import mistralclient.commands.v2.environments
 import mistralclient.commands.v2.executions
+import mistralclient.commands.v2.services
 import mistralclient.commands.v2.tasks
 import mistralclient.commands.v2.workbooks
 import mistralclient.commands.v2.workflows
@@ -110,7 +111,10 @@ class MistralShell(app.App):
         self._set_shell_commands(self._get_commands_v2())
 
     def configure_logging(self):
-        super(MistralShell, self).configure_logging()
+        log_lvl = logging.DEBUG if self.options.debug else logging.WARNING
+        logging.basicConfig(
+            format="%(levelname)s (%(module)s) %(message)s",
+            level=log_lvl)
         logging.getLogger('iso8601').setLevel(logging.WARNING)
         if self.options.verbose_level <= 1:
             logging.getLogger('requests').setLevel(logging.WARNING)
@@ -335,6 +339,8 @@ class MistralShell(app.App):
             mistralclient.commands.v2.action_executions.GetOutput,
             'action-execution-update':
             mistralclient.commands.v2.action_executions.Update,
+            'action-execution-delete':
+            mistralclient.commands.v2.action_executions.Delete,
             'execution-create': mistralclient.commands.v2.executions.Create,
             'execution-delete': mistralclient.commands.v2.executions.Delete,
             'execution-update': mistralclient.commands.v2.executions.Update,
@@ -348,6 +354,7 @@ class MistralShell(app.App):
             'task-get': mistralclient.commands.v2.tasks.Get,
             'task-get-published': mistralclient.commands.v2.tasks.GetPublished,
             'task-get-result': mistralclient.commands.v2.tasks.GetResult,
+            'task-rerun': mistralclient.commands.v2.tasks.Rerun,
             'action-list': mistralclient.commands.v2.actions.List,
             'action-get': mistralclient.commands.v2.actions.Get,
             'action-create': mistralclient.commands.v2.actions.Create,
@@ -360,7 +367,8 @@ class MistralShell(app.App):
             'cron-trigger-create':
             mistralclient.commands.v2.cron_triggers.Create,
             'cron-trigger-delete':
-            mistralclient.commands.v2.cron_triggers.Delete
+            mistralclient.commands.v2.cron_triggers.Delete,
+            'service-list': mistralclient.commands.v2.services.List
         }
 
 

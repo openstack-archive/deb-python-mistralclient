@@ -15,20 +15,44 @@
 # How many seconds to wait for the API to be responding before giving up
 API_RESPONDING_TIMEOUT=20
 
-if ! timeout ${API_RESPONDING_TIMEOUT} sh -c "while ! curl -s http://127.0.0.1:8989/v2/ 2>/dev/null | grep -q 'Authentication required' ; do sleep 1; done"; then
+if ! timeout ${API_RESPONDING_TIMEOUT} sh -c "until curl --output /dev/null --silent --head --fail http://localhost:8989; do sleep 1; done"; then
     echo "Mistral API failed to respond within ${API_RESPONDING_TIMEOUT} seconds"
     exit 1
 fi
 
 echo "Successfully contacted Mistral API"
 
-# Where tempest code lives
-TEMPEST_DIR=${TEMPEST_DIR:-/opt/stack/new/tempest}
+export BASE=/opt/stack
+export MISTRALCLIENT_DIR="$BASE/new/python-mistralclient"
 
-# Add tempest source tree to PYTHONPATH
-export PYTHONPATH=$PYTHONPATH:$TEMPEST_DIR
+# Get demo credentials.
+cd ${BASE}/new/devstack
+source openrc alt_demo alt_demo
 
-#installing requirements for tempest
-pip install -r $TEMPEST_DIR/requirements.txt
+export OS_ALT_USERNAME=${OS_USERNAME}
+export OS_ALT_TENANT_NAME=${OS_TENANT_NAME}
+export OS_ALT_PASSWORD=${OS_PASSWORD}
 
-nosetests -sv mistralclient/tests/functional/
+# Get admin credentials.
+source openrc admin admin
+
+# Store these credentials into the config file.
+CREDS_FILE=${MISTRALCLIENT_DIR}/functional_creds.conf
+cat <<EOF > ${CREDS_FILE}
+# Credentials for functional testing
+[auth]
+uri = $OS_AUTH_URL
+[admin]
+user = $OS_USERNAME
+tenant = $OS_TENANT_NAME
+pass = $OS_PASSWORD
+[demo]
+user = $OS_ALT_USERNAME
+tenant = $OS_ALT_TENANT_NAME
+pass = $OS_ALT_PASSWORD
+EOF
+
+cd $MISTRALCLIENT_DIR
+
+# Run tests
+tox -efunctional -- nosetests -sv mistralclient/tests/functional

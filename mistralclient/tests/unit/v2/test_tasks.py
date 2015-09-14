@@ -12,6 +12,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import json
+
 from mistralclient.api.v2 import tasks
 from mistralclient.tests.unit.v2 import base
 
@@ -41,7 +43,10 @@ class TestTasksV2(base.BaseClientV2Test):
         self.assertEqual(1, len(task_list))
         task = task_list[0]
 
-        self.assertEqual(tasks.Task(self.tasks, TASK).__dict__, task.__dict__)
+        self.assertEqual(
+            tasks.Task(self.tasks, TASK).to_dict(),
+            task.to_dict()
+        )
         mock.assert_called_once_with(URL_TEMPLATE)
 
     def test_get(self):
@@ -49,6 +54,50 @@ class TestTasksV2(base.BaseClientV2Test):
 
         task = self.tasks.get(TASK['id'])
 
-        self.assertEqual(tasks.Task(self.tasks, TASK).__dict__, task.__dict__)
-        mock.assert_called_once_with(
-            URL_TEMPLATE_ID % TASK['id'])
+        self.assertEqual(
+            tasks.Task(self.tasks, TASK).to_dict(),
+            task.to_dict()
+        )
+        mock.assert_called_once_with(URL_TEMPLATE_ID % TASK['id'])
+
+    def test_rerun(self):
+        mock = self.mock_http_put(content=TASK)
+
+        task = self.tasks.rerun(TASK['id'])
+
+        self.assertDictEqual(
+            tasks.Task(self.tasks, TASK).to_dict(),
+            task.to_dict()
+        )
+
+        self.assertEqual(1, mock.call_count)
+        self.assertEqual(URL_TEMPLATE_ID % TASK['id'], mock.call_args[0][0])
+        self.assertDictEqual(
+            {
+                'reset': True,
+                'state': 'RUNNING',
+                'id': TASK['id']
+            },
+            json.loads(mock.call_args[0][1])
+        )
+
+    def test_rerun_no_reset(self):
+        mock = self.mock_http_put(content=TASK)
+
+        task = self.tasks.rerun(TASK['id'], reset=False)
+
+        self.assertDictEqual(
+            tasks.Task(self.tasks, TASK).to_dict(),
+            task.to_dict()
+        )
+
+        self.assertEqual(1, mock.call_count)
+        self.assertEqual(URL_TEMPLATE_ID % TASK['id'], mock.call_args[0][0])
+        self.assertDictEqual(
+            {
+                'reset': False,
+                'state': 'RUNNING',
+                'id': TASK['id']
+            },
+            json.loads(mock.call_args[0][1])
+        )

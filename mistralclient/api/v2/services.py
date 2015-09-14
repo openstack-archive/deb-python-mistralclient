@@ -1,4 +1,4 @@
-# Copyright 2015 - Huawei Technologies Co. Ltd
+# Copyright 2015 Huawei Technologies Co., Ltd.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -12,20 +12,15 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from mistralclient import exceptions
+from mistralclient.api import base
 
 
-def do_action_on_many(action, resources, success_msg, error_msg):
-    """Helper to run an action on many resources."""
-    failure_flag = False
+class Service(base.Resource):
+    resource_name = 'Service'
 
-    for resource in resources:
-        try:
-            action(resource)
-            print(success_msg % resource)
-        except Exception as e:
-            failure_flag = True
-            print(e)
 
-    if failure_flag:
-        raise exceptions.MistralClientException(error_msg)
+class ServiceManager(base.ResourceManager):
+    resource_class = Service
+
+    def list(self):
+        return self._list('/services', response_key='services')
