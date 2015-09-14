@@ -24,7 +24,7 @@ override_dh_clean:
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
-	nosetests -v --exclude-dir=mistralclient/tests/functional
+	nosetests -v -I cli_multi_tenancy_tests.py -I cli_tests_v2.py
 #	set -e ; for i in $(PYTHONS) $(PYTHON3S) ; do \
 #		PYMAJOR=`echo $$i | cut -d'.' -f1` ; \
 #		echo "===> Testing with python$$i (python$$PYMAJOR)" ; \

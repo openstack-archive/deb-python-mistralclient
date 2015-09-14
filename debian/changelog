@@ -1,3 +1,11 @@
+python-mistralclient (1:1.0.2-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Applied Ubuntu patch (Closes: #796462).
+  * Fixed (build-)depends for this release.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 14 Sep 2015 10:12:57 +0000
+
 python-mistralclient (1:1.0.0-1) experimental; urgency=medium
 
   * New upstream release.
