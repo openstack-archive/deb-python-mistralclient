@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ] ; then
+	update-alternatives --remove mistral /usr/bin/python2-mistral
+fi
+
+#DEBHELPER#
+
+exit 0

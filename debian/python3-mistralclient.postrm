@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "disappear" ] ; then
+	update-alternatives --remove mistral /usr/bin/python3-mistral
+fi
+
+#DEBHELPER#
+
+exit 0

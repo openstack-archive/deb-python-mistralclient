@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 PYTHONS:=$(shell pyversions -vr)
-#PYTHON3S:=$(shell py3versions -vr)
+PYTHON3S:=$(shell py3versions -vr)
 
 UPSTREAM_GIT = git://github.com/stackforge/python-mistralclient.git
 include /usr/share/openstack-pkg-tools/pkgos.make
@@ -9,14 +9,20 @@ include /usr/share/openstack-pkg-tools/pkgos.make
 export OSLO_PACKAGE_VERSION=$(VERSION)
 
 %:
-		dh $@ --buildsystem=python_distutils --with python2,sphinxdoc
+		dh $@ --buildsystem=python_distutils --with python2,python3,sphinxdoc
 
 override_dh_install:
 	set -e ; for pyvers in $(PYTHONS); do \
 		python$$pyvers setup.py install --install-layout=deb \
 			--root $(CURDIR)/debian/python-mistralclient; \
 	done
+	set -e ; for pyvers in $(PYTHON3S); do \
+		python$$pyvers setup.py install --install-layout=deb \
+			--root $(CURDIR)/debian/python3-mistralclient; \
+	done
 	rm -rf $(CURDIR)/debian/python*-mistralclient/usr/lib/python*/dist-packages/*.pth
+	mv $(CURDIR)/debian/python-mistralclient/usr/bin/mistral $(CURDIR)/debian/python-mistralclient/usr/bin/python2-mistral
+	mv $(CURDIR)/debian/python3-mistralclient/usr/bin/mistral $(CURDIR)/debian/python3-mistralclient/usr/bin/python3-mistral
 
 override_dh_clean:
 	dh_clean -O--buildsystem=python_distutils
@@ -25,6 +31,7 @@ override_dh_clean:
 override_dh_auto_test:
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	nosetests -v -I cli_multi_tenancy_tests.py -I cli_tests_v2.py
+	nosetests3 -v -I cli_multi_tenancy_tests.py -I cli_tests_v2.py
 #	set -e ; for i in $(PYTHONS) $(PYTHON3S) ; do \
 #		PYMAJOR=`echo $$i | cut -d'.' -f1` ; \
 #		echo "===> Testing with python$$i (python$$PYMAJOR)" ; \
