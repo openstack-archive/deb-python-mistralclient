@@ -1,6 +1,7 @@
 python-mistralclient (1:1.1.0-1) experimental; urgency=medium
 
   * New upstream release.
+  * Fixed (build-)depends for this release.
 
  -- Thomas Goirand <zigo@debian.org>  Sun, 27 Sep 2015 12:27:55 +0000
 
