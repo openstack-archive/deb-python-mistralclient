@@ -17,7 +17,6 @@ import mock
 
 from mistralclient.api.v2 import workbooks
 from mistralclient.commands.v2 import workbooks as workbook_cmd
-from mistralclient import exceptions as exc
 from mistralclient.tests.unit import base
 
 
@@ -50,83 +49,71 @@ WORKBOOK_WITH_DEF = workbooks.Workbook(mock, WB_WITH_DEF_DICT)
 
 class TestCLIWorkbooksV2(base.BaseCommandTest):
     @mock.patch('argparse.open', create=True)
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.create')
-    def test_create(self, mock, mock_open):
-        mock.return_value = WORKBOOK
-        mock_open.return_value = mock.MagicMock(spec=open)
+    def test_create(self, mock_open):
+        self.client.workbooks.create.return_value = WORKBOOK
 
         result = self.call(workbook_cmd.Create, app_args=['wb.yaml'])
 
         self.assertEqual(('a', 'a, b', '1', '1'), result[1])
 
     @mock.patch('argparse.open', create=True)
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.update')
-    def test_update(self, mock, mock_open):
-        mock.return_value = WORKBOOK
-        mock_open.return_value = mock.MagicMock(spec=open)
+    def test_update(self, mock_open):
+        self.client.workbooks.update.return_value = WORKBOOK
 
         result = self.call(workbook_cmd.Update, app_args=['definition'])
 
         self.assertEqual(('a', 'a, b', '1', '1'), result[1])
 
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.list')
-    def test_list(self, mock):
-        mock.return_value = (WORKBOOK,)
+    def test_list(self):
+        self.client.workbooks.list.return_value = (WORKBOOK,)
 
         result = self.call(workbook_cmd.List)
 
         self.assertEqual([('a', 'a, b', '1', '1')], result[1])
 
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.get')
-    def test_get(self, mock):
-        mock.return_value = WORKBOOK
+    def test_get(self):
+        self.client.workbooks.get.return_value = WORKBOOK
 
         result = self.call(workbook_cmd.Get, app_args=['name'])
 
         self.assertEqual(('a', 'a, b', '1', '1'), result[1])
 
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.delete')
-    def test_delete(self, del_mock):
+    def test_delete(self):
         self.call(workbook_cmd.Delete, app_args=['name'])
 
-        del_mock.assert_called_once_with('name')
+        self.client.workbooks.delete.assert_called_once_with('name')
 
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.delete')
-    def test_delete_with_multi_names(self, del_mock):
+    def test_delete_with_multi_names(self):
         self.call(workbook_cmd.Delete, app_args=['name1', 'name2'])
 
-        self.assertEqual(2, del_mock.call_count)
+        self.assertEqual(2, self.client.workbooks.delete.call_count)
         self.assertEqual(
             [mock.call('name1'), mock.call('name2')],
-            del_mock.call_args_list
+            self.client.workbooks.delete.call_args_list
         )
 
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.get')
-    def test_get_definition(self, mock):
-        mock.return_value = WORKBOOK_WITH_DEF
+    def test_get_definition(self):
+        self.client.workbooks.get.return_value = WORKBOOK_WITH_DEF
 
         self.call(workbook_cmd.GetDefinition, app_args=['name'])
 
         self.app.stdout.write.assert_called_with(WB_DEF)
 
     @mock.patch('argparse.open', create=True)
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.validate')
-    def test_validate(self, mock, mock_open):
-        mock.return_value = {'valid': True}
-        mock_open.return_value = mock.MagicMock(spec=open)
+    def test_validate(self, mock_open):
+        self.client.workbooks.validate.return_value = {'valid': True}
 
         result = self.call(workbook_cmd.Validate, app_args=['wb.yaml'])
 
-        self.assertEqual(result[0], tuple())
-        self.assertEqual(result[1], tuple())
+        self.assertEqual((True, None), result[1])
 
     @mock.patch('argparse.open', create=True)
-    @mock.patch('mistralclient.api.v2.workbooks.WorkbookManager.validate')
-    def test_validate_failed(self, mock, mock_open):
-        mock.return_value = {'valid': False, 'error': 'Invalid DSL...'}
-        mock_open.return_value = mock.MagicMock(spec=open)
+    def test_validate_failed(self, mock_open):
+        self.client.workbooks.validate.return_value = {
+            'valid': False,
+            'error': 'Invalid DSL...'
+        }
 
-        self.assertRaises(exc.MistralClientException,
-                          self.call,
-                          workbook_cmd.Validate,
-                          app_args=['wb.yaml'])
+        result = self.call(workbook_cmd.Validate, app_args=['wb.yaml'])
+
+        self.assertEqual((False, 'Invalid DSL...'), result[1])

@@ -24,6 +24,7 @@ class FakeResponse(object):
     def __init__(self, status_code, content=None):
         self.status_code = status_code
         self.content = content
+        self.headers = {}
 
     def json(self):
         return json.loads(self.content)
@@ -69,7 +70,7 @@ class BaseClientTest(unittest2.TestCase):
 class BaseCommandTest(unittest2.TestCase):
     def setUp(self):
         self.app = mock.Mock()
-        self.app.client = mock.Mock()
+        self.client = self.app.client_manager.workflow_engine
 
     def call(self, command, app_args=[], prog_name=''):
         cmd = command(self.app, app_args)

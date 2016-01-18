@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from tempest_lib import decorators
 from tempest_lib import exceptions
 
 from mistralclient.tests.functional.cli import base
@@ -43,7 +42,7 @@ class SimpleMistralCLITests(base.MistralCLIAuth):
             self.mistral('workflow-list'))
         self.assertTableStruct(
             workflows,
-            ['Name', 'Tags', 'Input', 'Created at', 'Updated at']
+            ['ID', 'Name', 'Tags', 'Input', 'Created at', 'Updated at']
         )
 
     def test_executions_list(self):
@@ -183,6 +182,27 @@ class WorkbookCLITests(base_v2.MistralClientTestBase):
             'workbook-get-definition', params=wb_name)
         self.assertNotIn('404 Not Found', definition)
 
+    def test_workbook_validate_with_valid_def(self):
+        wb = self.mistral_admin(
+            'workbook-validate', params=self.wb_def)
+        wb_valid = self.get_value_of_field(wb, 'Valid')
+        wb_error = self.get_value_of_field(wb, 'Error')
+
+        self.assertEqual('True', wb_valid)
+        self.assertEqual('None', wb_error)
+
+    def test_workbook_validate_with_invalid_def(self):
+        self.create_file('wb.yaml',
+                         'name: wb\n')
+        wb = self.mistral_admin(
+            'workbook-validate', params='wb.yaml')
+
+        wb_valid = self.get_value_of_field(wb, 'Valid')
+        wb_error = self.get_value_of_field(wb, 'Error')
+
+        self.assertEqual('False', wb_valid)
+        self.assertNotEqual('None', wb_error)
+
 
 class WorkflowCLITests(base_v2.MistralClientTestBase):
     """Test suite checks commands to work with workflows."""
@@ -253,6 +273,26 @@ class WorkflowCLITests(base_v2.MistralClientTestBase):
         self.assertNotEqual(created_wf_info['Updated at'],
                             updated_wf_info['Updated at'])
 
+    def test_workflow_update_truncate_input(self):
+        input_value = "very_long_input_parameter_name_that_should_be_truncated"
+        wf_def = """
+        version: "2.0"
+        workflow1:
+          input:
+            - {0}
+          tasks:
+            task1:
+              action: std.noop
+        """.format(input_value)
+        self.create_file('wf.yaml', wf_def)
+        self.workflow_create('wf.yaml')
+        upd_wf = self.mistral_admin(
+            'workflow-update', params='wf.yaml')
+        upd_wf_info = self.get_item_info(
+            get_from=upd_wf, get_by='Name', value='workflow1')
+
+        self.assertEqual(upd_wf_info['Input'][:-3], input_value[:25])
+
     def test_workflow_get(self):
         created = self.workflow_create(self.wf_def)
         wf_name = created[0]['Name']
@@ -268,6 +308,27 @@ class WorkflowCLITests(base_v2.MistralClientTestBase):
         definition = self.mistral_admin(
             'workflow-get-definition', params=wf_name)
         self.assertNotIn('404 Not Found', definition)
+
+    def test_workflow_validate_with_valid_def(self):
+        wf = self.mistral_admin(
+            'workflow-validate', params=self.wf_def)
+        wf_valid = self.get_value_of_field(wf, 'Valid')
+        wf_error = self.get_value_of_field(wf, 'Error')
+
+        self.assertEqual('True', wf_valid)
+        self.assertEqual('None', wf_error)
+
+    def test_workflow_validate_with_invalid_def(self):
+        self.create_file('wf.yaml',
+                         'name: wf\n')
+        wf = self.mistral_admin(
+            'workflow-validate', params='wf.yaml')
+
+        wf_valid = self.get_value_of_field(wf, 'Valid')
+        wf_error = self.get_value_of_field(wf, 'Error')
+
+        self.assertEqual('False', wf_valid)
+        self.assertNotEqual('None', wf_error)
 
 
 class ExecutionCLITests(base_v2.MistralClientTestBase):
@@ -301,7 +362,7 @@ class ExecutionCLITests(base_v2.MistralClientTestBase):
 
         self.assertEqual(self.direct_wf['Name'], wf)
         self.assertIsNotNone(created_at)
-        self.assertEqual(description, "execution test")
+        self.assertEqual("execution test", description)
 
         execs = self.mistral_admin('execution-list')
         self.assertIn(exec_id, [ex['ID'] for ex in execs])
@@ -343,7 +404,7 @@ class ExecutionCLITests(base_v2.MistralClientTestBase):
 
         description = self.get_value_of_field(execution, 'Description')
 
-        self.assertEqual(description, "execution update test")
+        self.assertEqual("execution update test", description)
 
     def test_execution_get(self):
         execution = self.execution_create(self.direct_wf['Name'])
@@ -373,6 +434,74 @@ class ExecutionCLITests(base_v2.MistralClientTestBase):
             'execution-get-output', params=exec_id)
 
         self.assertEqual([], ex_output)
+
+    def test_executions_list_with_pagination(self):
+
+        execution1 = self.mistral_admin(
+            'execution-create',
+            params='{0} -d "a"'.format(self.direct_wf['Name'])
+        )
+
+        execution2 = self.mistral_admin(
+            'execution-create',
+            params='{0} -d "b"'.format(self.direct_wf['Name'])
+        )
+
+        executions = self.mistral_cli(
+            True,
+            'execution-list',
+            params="--limit 1"
+        )
+
+        self.assertEqual(1, len(executions))
+
+        exec_id_1 = self.get_value_of_field(execution1, 'ID')
+        exec_id_2 = self.get_value_of_field(execution2, 'ID')
+        executions = self.mistral_cli(
+            True,
+            'execution-list',
+            params="--marker %s" % exec_id_1
+        )
+        self.assertNotIn(exec_id_1, [ex['ID'] for ex in executions])
+        self.assertIn(exec_id_2, [ex['ID'] for ex in executions])
+
+        executions = self.mistral_cli(
+            True,
+            'execution-list',
+            params="--sort_keys Description"
+        )
+
+        self.assertIn(exec_id_1, [ex['ID'] for ex in executions])
+        self.assertIn(exec_id_2, [ex['ID'] for ex in executions])
+
+        ex1_index = -1
+        ex2_index = -1
+        for idx, ex in enumerate(executions):
+            if ex['ID'] == exec_id_1:
+                ex1_index = idx
+            elif ex['ID'] == exec_id_2:
+                ex2_index = idx
+
+        self.assertTrue(ex1_index < ex2_index)
+
+        executions = self.mistral_cli(
+            True,
+            'execution-list',
+            params="--sort_keys Description --sort_dirs=desc"
+        )
+
+        self.assertIn(exec_id_1, [ex['ID'] for ex in executions])
+        self.assertIn(exec_id_2, [ex['ID'] for ex in executions])
+
+        ex1_index = -1
+        ex2_index = -1
+        for idx, ex in enumerate(executions):
+            if ex['ID'] == exec_id_1:
+                ex1_index = idx
+            elif ex['ID'] == exec_id_2:
+                ex2_index = idx
+
+        self.assertTrue(ex1_index > ex2_index)
 
 
 class CronTriggerCLITests(base_v2.MistralClientTestBase):
@@ -498,14 +627,14 @@ class ActionCLITests(base_v2.MistralClientTestBase):
         action_2 = self.get_item_info(
             get_from=init_acts, get_by='Name', value='farewell')
 
-        self.assertEqual(action_1['Tags'], '<none>')
-        self.assertEqual(action_2['Tags'], '<none>')
+        self.assertEqual('<none>', action_1['Tags'])
+        self.assertEqual('<none>', action_2['Tags'])
 
-        self.assertEqual(action_1['Is system'], 'False')
-        self.assertEqual(action_2['Is system'], 'False')
+        self.assertEqual('False', action_1['Is system'])
+        self.assertEqual('False', action_2['Is system'])
 
-        self.assertEqual(action_1['Input'], 'name')
-        self.assertEqual(action_2['Input'], 'None')
+        self.assertEqual('name', action_1['Input'])
+        self.assertEqual('None', action_2['Input'])
 
         acts = self.mistral_admin('action-list')
         self.assertIn(action_1['Name'], [action['Name'] for action in acts])
@@ -542,12 +671,30 @@ class ActionCLITests(base_v2.MistralClientTestBase):
         updated_action = self.get_item_info(
             get_from=acts, get_by='Name', value='greeting')
 
-        self.assertEqual(updated_action['Tags'], 'tag, tag1')
+        self.assertEqual('tag, tag1', updated_action['Tags'])
         self.assertEqual(created_action['Created at'].split(".")[0],
                          updated_action['Created at'])
         self.assertEqual(created_action['Name'], updated_action['Name'])
         self.assertNotEqual(created_action['Updated at'],
                             updated_action['Updated at'])
+
+    def test_action_update_truncate_input(self):
+        input_value = "very_long_input_parameter_name_that_should_be_truncated"
+        act_def = """
+        version: "2.0"
+        action1:
+          input:
+            - {0}
+          base: std.noop
+        """.format(input_value)
+        self.create_file('action.yaml', act_def)
+        self.action_create('action.yaml')
+        upd_act = self.mistral_admin(
+            'action-update', params='action.yaml')
+        upd_act_info = self.get_item_info(
+            get_from=upd_act, get_by='Name', value='action1')
+
+        self.assertEqual(upd_act_info['Input'][:-3], input_value[:25])
 
     def test_action_get_definition(self):
         self.action_create(self.act_def)
@@ -585,6 +732,29 @@ class EnvironmentCLITests(base_v2.MistralClientTestBase):
         envs = self.mistral_admin('environment-list')
         self.assertNotIn(env_name, [en['Name'] for en in envs])
 
+    def test_environment_create_without_description(self):
+        self.create_file('env_without_des.yaml',
+                         'name: env\n'
+                         'variables:\n'
+                         '  var: "value"')
+
+        env = self.mistral_admin('environment-create',
+                                 params='env_without_des.yaml')
+
+        env_name = self.get_value_of_field(env, 'Name')
+        env_desc = self.get_value_of_field(env, 'Description')
+
+        self.assertTableStruct(env, ['Field', 'Value'])
+
+        envs = self.mistral_admin('environment-list')
+        self.assertIn(env_name, [en['Name'] for en in envs])
+        self.assertIn(env_desc, 'None')
+
+        self.mistral_admin('environment-delete', params='env')
+
+        envs = self.mistral_admin('environment-list')
+        self.assertNotIn(env_name, [en['Name'] for en in envs])
+
     def test_environment_update(self):
         env = self.environment_create('env.yaml')
         env_name = self.get_value_of_field(env, 'Name')
@@ -593,7 +763,7 @@ class EnvironmentCLITests(base_v2.MistralClientTestBase):
         env_updated_at = self.get_value_of_field(env, 'Updated at')
 
         self.assertIsNotNone(env_created_at)
-        self.assertEqual(env_updated_at, 'None')
+        self.assertEqual('None', env_updated_at)
 
         self.create_file('env_upd.yaml',
                          'name: env\n'
@@ -611,26 +781,9 @@ class EnvironmentCLITests(base_v2.MistralClientTestBase):
 
         self.assertEqual(env_name, updated_env_name)
         self.assertNotEqual(env_desc, updated_env_desc)
-        self.assertEqual(updated_env_desc, 'Updated env')
+        self.assertEqual('Updated env', updated_env_desc)
         self.assertEqual(env_created_at.split('.')[0], updated_env_created_at)
         self.assertIsNotNone(updated_env_updated_at)
-
-    @decorators.skip_because(bug="1418545")
-    def test_environment_update_work_as_create(self):
-        env = self.mistral_admin('environment-update', params='env.yaml')
-        env_name = self.get_value_of_field(env, 'Name')
-        env_desc = self.get_value_of_field(env, 'Description')
-
-        self.assertTableStruct(env, ['Field', 'Value'])
-
-        envs = self.mistral_admin('environment-list')
-        self.assertIn(env_name, [en['Name'] for en in envs])
-        self.assertIn(env_desc, [en['Description'] for en in envs])
-
-        self.mistral_admin('environment-delete', params=env_name)
-
-        envs = self.mistral_admin('environment-list')
-        self.assertNotIn(env_name, [en['Name'] for en in envs])
 
     def test_environment_get(self):
         env = self.environment_create('env.yaml')
@@ -677,8 +830,8 @@ class ActionExecutionCLITests(base_v2.MistralClientTestBase):
             act_ex_from_list['ID'],
             self.get_value_of_field(act_ex, 'ID')
         )
-        self.assertEqual(wf_name, self.direct_wf['Name'])
-        self.assertEqual(status, 'SUCCESS')
+        self.assertEqual(self.direct_wf['Name'], wf_name)
+        self.assertEqual('SUCCESS', status)
 
     def test_act_execution_create_delete(self):
         action_ex = self.mistral_admin(
@@ -1071,6 +1224,12 @@ class NegativeCLITests(base_v2.MistralClientTestBase):
                           self.mistral_admin,
                           'environment-get')
 
+    def test_env_get_nonexistent(self):
+        self.assertRaises(exceptions.CommandFailed,
+                          self.mistral_admin,
+                          'environment-get',
+                          params='nonexist')
+
     def test_env_create_same_name(self):
         self.create_file('env.yaml',
                          'name: env\n'
@@ -1079,6 +1238,12 @@ class NegativeCLITests(base_v2.MistralClientTestBase):
                          '  var: "value"')
 
         self.environment_create('env.yaml')
+        self.assertRaises(exceptions.CommandFailed,
+                          self.environment_create,
+                          'env.yaml')
+
+    def test_env_create_empty(self):
+        self.create_file('env.yaml')
         self.assertRaises(exceptions.CommandFailed,
                           self.environment_create,
                           'env.yaml')
@@ -1100,6 +1265,22 @@ class NegativeCLITests(base_v2.MistralClientTestBase):
                           self.mistral_admin,
                           'environment-update',
                           params='env')
+
+    def test_env_update_empty(self):
+        self.create_file('env.yaml')
+        self.assertRaises(exceptions.CommandFailed,
+                          self.mistral_admin,
+                          'environment-update',
+                          params='env')
+
+    def test_env_update_nonexistant_env(self):
+        self.create_file('env.yaml',
+                         'name: env'
+                         'variables:\n  var: "value"')
+        self.assertRaises(exceptions.CommandFailed,
+                          self.mistral_admin,
+                          'environment-update',
+                          params='env.yaml')
 
     def test_env_create_without_name(self):
         self.create_file('env.yaml',

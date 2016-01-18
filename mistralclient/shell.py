@@ -43,8 +43,12 @@ LOG = logging.getLogger(__name__)
 class OpenStackHelpFormatter(argparse.HelpFormatter):
     def __init__(self, prog, indent_increment=2, max_help_position=32,
                  width=None):
-        super(OpenStackHelpFormatter, self).__init__(prog, indent_increment,
-                                                     max_help_position, width)
+        super(OpenStackHelpFormatter, self).__init__(
+            prog,
+            indent_increment,
+            max_help_position,
+            width
+        )
 
     def start_section(self, heading):
         # Title-case the headings.
@@ -103,7 +107,7 @@ class MistralShell(app.App):
     def __init__(self):
         super(MistralShell, self).__init__(
             description=__doc__.strip(),
-            version='0.1',
+            version=mistralclient.__version__,
             command_manager=commandmanager.CommandManager('mistral.cli'),
         )
 
@@ -114,8 +118,10 @@ class MistralShell(app.App):
         log_lvl = logging.DEBUG if self.options.debug else logging.WARNING
         logging.basicConfig(
             format="%(levelname)s (%(module)s) %(message)s",
-            level=log_lvl)
+            level=log_lvl
+        )
         logging.getLogger('iso8601').setLevel(logging.WARNING)
+
         if self.options.verbose_level <= 1:
             logging.getLogger('requests').setLevel(logging.WARNING)
 
@@ -224,7 +230,7 @@ class MistralShell(app.App):
             '--os-password',
             action='store',
             dest='password',
-            default=c.env('OS_PASSWORD', default='openstack'),
+            default=c.env('OS_PASSWORD'),
             help='Authentication password (Env: OS_PASSWORD)'
         )
         parser.add_argument(
@@ -262,6 +268,14 @@ class MistralShell(app.App):
             default=c.env('OS_CACERT'),
             help='Authentication CA Certificate (Env: OS_CACERT)'
         )
+        parser.add_argument(
+            '--insecure',
+            action='store_true',
+            dest='insecure',
+            default=c.env('MISTRALCLIENT_INSECURE', default=False),
+            help='Disables SSL/TLS certificate verification '
+                 '(Env: MISTRALCLIENT_INSECURE)'
+        )
         return parser
 
     def initialize_app(self, argv):
@@ -271,16 +285,42 @@ class MistralShell(app.App):
 
         self._set_shell_commands(self._get_commands(ver))
 
-        self.client = client.client(mistral_url=self.options.mistral_url,
-                                    username=self.options.username,
-                                    api_key=self.options.password,
-                                    project_name=self.options.tenant_name,
-                                    auth_url=self.options.auth_url,
-                                    project_id=self.options.tenant_id,
-                                    endpoint_type=self.options.endpoint_type,
-                                    service_type=self.options.service_type,
-                                    auth_token=self.options.token,
-                                    cacert=self.options.cacert)
+        do_help = ('help' in argv) or ('-h' in argv) or not argv
+
+        # Set default for auth_url if not supplied. The default is not
+        # set at the parser to support use cases where auth is not enabled.
+        # An example use case would be a developer's environment.
+        if not self.options.auth_url:
+            if self.options.password or self.options.token:
+                self.options.auth_url = 'http://localhost:35357/v3'
+
+        # bash-completion should not require authentification.
+        if do_help or ('bash-completion' in argv):
+            self.options.auth_url = None
+
+        self.client = client.client(
+            mistral_url=self.options.mistral_url,
+            username=self.options.username,
+            api_key=self.options.password,
+            project_name=self.options.tenant_name,
+            auth_url=self.options.auth_url,
+            project_id=self.options.tenant_id,
+            endpoint_type=self.options.endpoint_type,
+            service_type=self.options.service_type,
+            auth_token=self.options.token,
+            cacert=self.options.cacert,
+            insecure=self.options.insecure
+        )
+
+        # Adding client_manager variable to make mistral client work with
+        # unified openstack client.
+        ClientManager = type(
+            'ClientManager',
+            (object,),
+            dict(workflow_engine=self.client)
+        )
+
+        self.client_manager = ClientManager()
 
     def _set_shell_commands(self, cmds_dict):
         for k, v in cmds_dict.items():

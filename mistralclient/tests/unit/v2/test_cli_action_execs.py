@@ -50,25 +50,23 @@ ACTION_EX_WITH_INPUT = action_ex.ActionExecution(
 
 
 class TestCLIActionExecutions(base.BaseCommandTest):
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.create'
-    )
-    def test_create(self, mock):
-        mock.return_value = ACTION_EX_WITH_OUTPUT
+    def test_create(self):
+        (self.client.action_executions.create.
+            return_value) = ACTION_EX_WITH_OUTPUT
 
         self.call(
             action_ex_cmd.Create,
             app_args=['some', '{"output": "Hello!"}']
         )
 
-        self.app.stdout.write.assert_called_with(
-            json.dumps(ACTION_EX_RESULT) + "\n")
+        self.assertDictEqual(
+            ACTION_EX_RESULT,
+            json.loads(self.app.stdout.write.call_args[0][0])
+        )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.create'
-    )
-    def test_create_save_result(self, mock):
-        mock.return_value = ACTION_EX_WITH_OUTPUT
+    def test_create_save_result(self):
+        (self.client.action_executions.create.
+            return_value) = ACTION_EX_WITH_OUTPUT
 
         result = self.call(
             action_ex_cmd.Create,
@@ -79,14 +77,12 @@ class TestCLIActionExecutions(base.BaseCommandTest):
 
         self.assertEqual(
             ('123', 'some', 'thing', 'task1', 'RUNNING',
-             'RUNNING somehow.', True), result[1]
+             'RUNNING somehow.', True),
+            result[1]
         )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.update'
-    )
-    def test_update(self, mock):
-        mock.return_value = ACTION_EX
+    def test_update(self):
+        self.client.action_executions.update.return_value = ACTION_EX
 
         result = self.call(action_ex_cmd.Update,
                            app_args=['id', '--state', 'ERROR'])
@@ -96,24 +92,19 @@ class TestCLIActionExecutions(base.BaseCommandTest):
              'RUNNING somehow.', True), result[1]
         )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.list'
-    )
-    def test_list(self, mock):
-        mock.return_value = (ACTION_EX,)
+    def test_list(self):
+        self.client.action_executions.list.return_value = (ACTION_EX,)
 
         result = self.call(action_ex_cmd.List)
 
         self.assertEqual(
             [('123', 'some', 'thing', 'task1', 'RUNNING',
-              'RUNNING somehow.', True)], result[1]
+              'RUNNING somehow.', True)],
+            result[1]
         )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.get'
-    )
-    def test_get(self, mock):
-        mock.return_value = ACTION_EX
+    def test_get(self):
+        self.client.action_executions.get.return_value = ACTION_EX
 
         result = self.call(action_ex_cmd.Get, app_args=['id'])
 
@@ -122,45 +113,36 @@ class TestCLIActionExecutions(base.BaseCommandTest):
              'RUNNING somehow.', True), result[1]
         )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.get'
-    )
-    def test_get_output(self, mock):
-        mock.return_value = ACTION_EX_WITH_OUTPUT
+    def test_get_output(self):
+        self.client.action_executions.get.return_value = ACTION_EX_WITH_OUTPUT
 
         self.call(action_ex_cmd.GetOutput, app_args=['id'])
 
-        self.app.stdout.write.assert_called_with(
-            json.dumps(ACTION_EX_RESULT, indent=4) + "\n")
+        self.assertDictEqual(
+            ACTION_EX_RESULT,
+            json.loads(self.app.stdout.write.call_args[0][0])
+        )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.get'
-    )
-    def test_get_input(self, mock):
-        mock.return_value = ACTION_EX_WITH_INPUT
+    def test_get_input(self):
+        self.client.action_executions.get.return_value = ACTION_EX_WITH_INPUT
 
         self.call(action_ex_cmd.GetInput, app_args=['id'])
 
-        self.app.stdout.write.assert_called_with(
-            json.dumps(ACTION_EX_INPUT, indent=4) + "\n"
+        self.assertDictEqual(
+            ACTION_EX_INPUT,
+            json.loads(self.app.stdout.write.call_args[0][0])
         )
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.delete'
-    )
-    def test_delete(self, del_mock):
+    def test_delete(self):
         self.call(action_ex_cmd.Delete, app_args=['id'])
 
-        del_mock.assert_called_once_with('id')
+        self.client.action_executions.delete.assert_called_once_with('id')
 
-    @mock.patch(
-        'mistralclient.api.v2.action_executions.ActionExecutionManager.delete'
-    )
-    def test_delete_with_multi_names(self, del_mock):
+    def test_delete_with_multi_names(self):
         self.call(action_ex_cmd.Delete, app_args=['id1', 'id2'])
 
-        self.assertEqual(2, del_mock.call_count)
+        self.assertEqual(2, self.client.action_executions.delete.call_count)
         self.assertEqual(
             [mock.call('id1'), mock.call('id2')],
-            del_mock.call_args_list
+            self.client.action_executions.delete.call_args_list
         )

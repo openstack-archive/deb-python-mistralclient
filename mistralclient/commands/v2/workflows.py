@@ -19,9 +19,7 @@ import logging
 from cliff import command
 from cliff import show
 
-from mistralclient.api.v2 import workflows
 from mistralclient.commands.v2 import base
-from mistralclient import exceptions as exc
 from mistralclient import utils
 
 
@@ -34,7 +32,9 @@ def format_list(workflow=None):
 
 def format(workflow=None, lister=False):
     columns = (
+        'ID',
         'Name',
+        'Project ID',
         'Tags',
         'Input',
         'Created at',
@@ -45,8 +45,10 @@ def format(workflow=None, lister=False):
         tags = getattr(workflow, 'tags', None) or []
 
         data = (
+            workflow.id,
             workflow.name,
-            ', '.join(tags) or '<none>',
+            workflow.project_id,
+            base.wrap(', '.join(tags)) or '<none>',
             workflow.input if not lister else base.cut(workflow.input),
             workflow.created_at
         )
@@ -68,7 +70,8 @@ class List(base.MistralLister):
         return format_list
 
     def _get_resources(self, parsed_args):
-        return workflows.WorkflowManager(self.app.client).list()
+        mistral_client = self.app.client_manager.workflow_engine
+        return mistral_client.workflows.list()
 
 
 class Get(show.ShowOne):
@@ -82,7 +85,8 @@ class Get(show.ShowOne):
         return parser
 
     def take_action(self, parsed_args):
-        wf = workflows.WorkflowManager(self.app.client).get(parsed_args.name)
+        mistral_client = self.app.client_manager.workflow_engine
+        wf = mistral_client.workflows.get(parsed_args.name)
 
         return format(wf)
 
@@ -116,8 +120,9 @@ class Create(base.MistralLister):
 
     def _get_resources(self, parsed_args):
         scope = 'public' if parsed_args.public else 'private'
+        mistral_client = self.app.client_manager.workflow_engine
 
-        return workflows.WorkflowManager(self.app.client).create(
+        return mistral_client.workflows.create(
             parsed_args.definition.read(),
             scope=scope
         )
@@ -134,9 +139,9 @@ class Delete(command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        wf_mgr = workflows.WorkflowManager(self.app.client)
+        mistral_client = self.app.client_manager.workflow_engine
         utils.do_action_on_many(
-            lambda s: wf_mgr.delete(s),
+            lambda s: mistral_client.workflows.delete(s),
             parsed_args.name,
             "Request to delete workflow %s has been accepted.",
             "Unable to delete the specified workflow(s)."
@@ -163,12 +168,13 @@ class Update(base.MistralLister):
         return parser
 
     def _get_format_function(self):
-        return format
+        return format_list
 
     def _get_resources(self, parsed_args):
         scope = 'public' if parsed_args.public else 'private'
+        mistral_client = self.app.client_manager.workflow_engine
 
-        return workflows.WorkflowManager(self.app.client).update(
+        return mistral_client.workflows.update(
             parsed_args.definition.read(),
             scope=scope
         )
@@ -185,14 +191,28 @@ class GetDefinition(command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        definition = workflows.WorkflowManager(self.app.client).get(
-            parsed_args.name).definition
+        mistral_client = self.app.client_manager.workflow_engine
+        definition = mistral_client.workflows.get(parsed_args.name).definition
 
         self.app.stdout.write(definition or "\n")
 
 
 class Validate(show.ShowOne):
     """Validate workflow."""
+
+    def _format(self, result=None):
+        columns = ('Valid', 'Error')
+
+        if result:
+            data = (result.get('valid'),)
+            if not result.get('error'):
+                data += (None,)
+            else:
+                data += (result.get('error'),)
+        else:
+            data = (tuple('<none>' for _ in range(len(columns))),)
+
+        return columns, data
 
     def get_parser(self, prog_name):
         parser = super(Validate, self).get_parser(prog_name)
@@ -206,11 +226,9 @@ class Validate(show.ShowOne):
         return parser
 
     def take_action(self, parsed_args):
-        result = workflows.WorkflowManager(self.app.client).validate(
-            parsed_args.definition.read())
+        mistral_client = self.app.client_manager.workflow_engine
+        result = mistral_client.workflows.validate(
+            parsed_args.definition.read()
+        )
 
-        if not result.get('valid', None):
-            raise exc.MistralClientException(
-                result.get('error', 'Unknown exception.'))
-
-        return tuple(), tuple()
+        return self._format(result)

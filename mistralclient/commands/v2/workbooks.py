@@ -19,9 +19,7 @@ import logging
 from cliff import command
 from cliff import show
 
-from mistralclient.api.v2 import workbooks
 from mistralclient.commands.v2 import base
-from mistralclient import exceptions as exc
 from mistralclient import utils
 
 
@@ -39,7 +37,7 @@ def format(workbook=None):
     if workbook:
         data = (
             workbook.name,
-            ', '.join(workbook.tags or '') or '<none>',
+            base.wrap(', '.join(workbook.tags or '')) or '<none>',
             workbook.created_at,
         )
 
@@ -61,7 +59,8 @@ class List(base.MistralLister):
         return format
 
     def _get_resources(self, parsed_args):
-        return workbooks.WorkbookManager(self.app.client).list()
+        mistral_client = self.app.client_manager.workflow_engine
+        return mistral_client.workbooks.list()
 
 
 class Get(show.ShowOne):
@@ -78,8 +77,8 @@ class Get(show.ShowOne):
         return parser
 
     def take_action(self, parsed_args):
-        workbook = workbooks.WorkbookManager(self.app.client).get(
-            parsed_args.name)
+        mistral_client = self.app.client_manager.workflow_engine
+        workbook = mistral_client.workbooks.get(parsed_args.name)
 
         return format(workbook)
 
@@ -99,8 +98,10 @@ class Create(show.ShowOne):
         return parser
 
     def take_action(self, parsed_args):
-        workbook = workbooks.WorkbookManager(self.app.client).create(
-            parsed_args.definition.read())
+        mistral_client = self.app.client_manager.workflow_engine
+        workbook = mistral_client.workbooks.create(
+            parsed_args.definition.read()
+        )
 
         return format(workbook)
 
@@ -116,9 +117,9 @@ class Delete(command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        wb_mgr = workbooks.WorkbookManager(self.app.client)
+        mistral_client = self.app.client_manager.workflow_engine
         utils.do_action_on_many(
-            lambda s: wb_mgr.delete(s),
+            lambda s: mistral_client.workbooks.delete(s),
             parsed_args.name,
             "Request to delete workbook %s has been accepted.",
             "Unable to delete the specified workbook(s)."
@@ -140,8 +141,10 @@ class Update(show.ShowOne):
         return parser
 
     def take_action(self, parsed_args):
-        workbook = workbooks.WorkbookManager(self.app.client).update(
-            parsed_args.definition.read())
+        mistral_client = self.app.client_manager.workflow_engine
+        workbook = mistral_client.workbooks.update(
+            parsed_args.definition.read()
+        )
 
         return format(workbook)
 
@@ -157,14 +160,28 @@ class GetDefinition(command.Command):
         return parser
 
     def take_action(self, parsed_args):
-        definition = workbooks.WorkbookManager(self.app.client).get(
-            parsed_args.name).definition
+        mistral_client = self.app.client_manager.workflow_engine
+        definition = mistral_client.workbooks.get(parsed_args.name).definition
 
         self.app.stdout.write(definition or "\n")
 
 
 class Validate(show.ShowOne):
     """Validate workbook."""
+
+    def _format(self, result=None):
+        columns = ('Valid', 'Error')
+
+        if result:
+            data = (result.get('valid'),)
+            if not result.get('error'):
+                data += (None,)
+            else:
+                data += (result.get('error'),)
+        else:
+            data = (tuple('<none>' for _ in range(len(columns))),)
+
+        return columns, data
 
     def get_parser(self, prog_name):
         parser = super(Validate, self).get_parser(prog_name)
@@ -178,11 +195,9 @@ class Validate(show.ShowOne):
         return parser
 
     def take_action(self, parsed_args):
-        result = workbooks.WorkbookManager(self.app.client).validate(
-            parsed_args.definition.read())
+        mistral_client = self.app.client_manager.workflow_engine
+        result = mistral_client.workbooks.validate(
+            parsed_args.definition.read()
+        )
 
-        if not result.get('valid', None):
-            raise exc.MistralClientException(
-                result.get('error', 'Unknown exception.'))
-
-        return tuple(), tuple()
+        return self._format(result)
