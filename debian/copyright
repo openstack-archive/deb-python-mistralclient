@@ -2,10 +2,6 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: python-mistralclient
 Source: git://github.com/stackforge/python-mistralclient.git
 
-Files: debian/*
-Copyright: (c) 2015, Thomas Goirand <zigo@debian.org>
-License: Apache-2
-
 Files: *
 Copyright: (c) 2010, Jacob Kaplan-Moss
            (c) 2010, United States Government as represented by NASA
@@ -23,6 +19,10 @@ Copyright: (c) 2010, Jacob Kaplan-Moss
            (c) 2013-2015, Mirantis, Inc.
            (c) 2012-2015, Red Hat, Inc.
            (c) 2011-2015, Piston Cloud Computing, Inc.
+License: Apache-2
+
+Files: debian/*
+Copyright: (c) 2015-2016, Thomas Goirand <zigo@debian.org>
 License: Apache-2
 
 License: Apache-2
