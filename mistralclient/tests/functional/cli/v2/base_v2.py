@@ -40,6 +40,9 @@ class MistralClientTestBase(base.MistralCLIAuth, base.MistralCLIAltAuth):
         cls.wf_def = os.path.relpath(
             'functionaltests/resources/v2/wf_v2.yaml', os.getcwd())
 
+        cls.wf_single_def = os.path.relpath(
+            'functionaltests/resources/v2/wf_single_v2.yaml', os.getcwd())
+
         cls.wf_with_delay_def = os.path.relpath(
             'functionaltests/resources/v2/wf_delay_v2.yaml', os.getcwd())
 
@@ -109,10 +112,24 @@ class MistralClientTestBase(base.MistralCLIAuth, base.MistralCLIAltAuth):
                 self.mistral_cli,
                 admin,
                 'workflow-delete',
-                params=workflow['Name']
+                params=workflow['ID']
             )
 
         return wf
+
+    def workflow_member_create(self, wf_id):
+        cmd_param = (
+            '%s workflow %s' % (wf_id, self.get_project_id("demo"))
+        )
+        member = self.mistral_admin("member-create", params=cmd_param)
+
+        self.addCleanup(
+            self.mistral_admin,
+            'member-delete',
+            params=cmd_param
+        )
+
+        return member
 
     def action_create(self, act_def, admin=True, scope='private'):
         params = '{0}'.format(act_def)

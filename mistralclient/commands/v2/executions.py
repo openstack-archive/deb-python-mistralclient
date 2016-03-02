@@ -1,4 +1,5 @@
 # Copyright 2014 - Mirantis, Inc.
+# Copyright 2015 - StackStorm, Inc.
 # All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -16,6 +17,7 @@
 
 import json
 import logging
+import os.path
 
 from cliff import command
 from cliff import show
@@ -33,8 +35,10 @@ def format_list(execution=None):
 def format(execution=None, lister=False):
     columns = (
         'ID',
-        'Workflow',
+        'Workflow ID',
+        'Workflow name',
         'Description',
+        'Task Execution ID',
         'State',
         'State info',
         'Created at',
@@ -48,8 +52,10 @@ def format(execution=None, lister=False):
 
         data = (
             execution.id,
+            execution.workflow_id,
             execution.workflow_name,
             execution.description,
+            execution.task_execution_id or '<none>',
             execution.state,
             state_info,
             execution.created_at,
@@ -137,8 +143,9 @@ class Create(show.ShowOne):
         parser = super(Create, self).get_parser(prog_name)
 
         parser.add_argument(
-            'workflow_name',
-            help='Workflow name'
+            'workflow_identifier',
+            help='Workflow ID or name. Workflow name will be deprecated since'
+                 'Mitaka.'
         )
         parser.add_argument(
             'workflow_input',
@@ -180,7 +187,7 @@ class Create(show.ShowOne):
         mistral_client = self.app.client_manager.workflow_engine
 
         execution = mistral_client.executions.create(
-            parsed_args.workflow_name,
+            parsed_args.workflow_identifier,
             wf_input,
             parsed_args.description,
             **params
@@ -225,15 +232,22 @@ class Update(show.ShowOne):
             help='Execution identifier'
         )
 
-        group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument(
+        parser.add_argument(
             '-s',
             '--state',
             dest='state',
             choices=['RUNNING', 'PAUSED', 'SUCCESS', 'ERROR'],
             help='Execution state'
         )
-        group.add_argument(
+
+        parser.add_argument(
+            '-e',
+            '--env',
+            dest='env',
+            help='Environment variables'
+        )
+
+        parser.add_argument(
             '-d',
             '--description',
             dest='description',
@@ -245,10 +259,18 @@ class Update(show.ShowOne):
     def take_action(self, parsed_args):
         mistral_client = self.app.client_manager.workflow_engine
 
+        env = (
+            utils.load_file(parsed_args.env)
+            if parsed_args.env and os.path.isfile(parsed_args.env)
+            else utils.load_content(parsed_args.env)
+        )
+
         execution = mistral_client.executions.update(
             parsed_args.id,
             parsed_args.state,
-            parsed_args.description)
+            description=parsed_args.description,
+            env=env
+        )
 
         return format(execution)
 

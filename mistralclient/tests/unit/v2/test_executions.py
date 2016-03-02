@@ -1,4 +1,5 @@
 # Copyright 2014 - Mirantis, Inc.
+# Copyright 2015 - StackStorm, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -23,6 +24,7 @@ from mistralclient.tests.unit.v2 import base
 
 EXEC = {
     'id': "123",
+    'workflow_id': '123e4567-e89b-12d3-a456-426655440000',
     'workflow_name': 'my_wf',
     'description': '',
     'state': 'RUNNING',
@@ -34,6 +36,20 @@ EXEC = {
     }
 }
 
+SUB_WF_EXEC = {
+    'id': "456",
+    'workflow_id': '123e4567-e89b-12d3-a456-426655440000',
+    'workflow_name': 'my_sub_wf',
+    'task_execution_id': "abc",
+    'description': '',
+    'state': 'RUNNING',
+    'input': {
+        "person": {
+            "first_name": "John",
+            "last_name": "Doe"
+        }
+    }
+}
 
 URL_TEMPLATE = '/executions'
 URL_TEMPLATE_ID = '/executions/%s'
@@ -48,13 +64,43 @@ class TestExecutionsV2(base.BaseClientV2Test):
             'input': json.dumps(EXEC['input']),
         }
 
-        ex = self.executions.create(EXEC['workflow_name'],
-                                    EXEC['input'])
+        ex = self.executions.create(
+            EXEC['workflow_name'],
+            EXEC['input']
+        )
 
         self.assertIsNotNone(ex)
-        self.assertEqual(executions.Execution(self.executions, EXEC).to_dict(),
-                         ex.to_dict())
-        mock.assert_called_once_with(URL_TEMPLATE, json.dumps(body))
+
+        self.assertDictEqual(
+            executions.Execution(self.executions, EXEC).to_dict(),
+            ex.to_dict()
+        )
+
+        self.assertEqual(URL_TEMPLATE, mock.call_args[0][0])
+        self.assertDictEqual(body, json.loads(mock.call_args[0][1]))
+
+    def test_create_with_workflow_id(self):
+        mock = self.mock_http_post(content=EXEC)
+        body = {
+            'workflow_id': EXEC['workflow_id'],
+            'description': '',
+            'input': json.dumps(EXEC['input']),
+        }
+
+        ex = self.executions.create(
+            EXEC['workflow_id'],
+            EXEC['input']
+        )
+
+        self.assertIsNotNone(ex)
+
+        self.assertDictEqual(
+            executions.Execution(self.executions, EXEC).to_dict(),
+            ex.to_dict()
+        )
+
+        self.assertEqual(URL_TEMPLATE, mock.call_args[0][0])
+        self.assertDictEqual(body, json.loads(mock.call_args[0][1]))
 
     @unittest2.expectedFailure
     def test_create_failure1(self):
@@ -64,8 +110,10 @@ class TestExecutionsV2(base.BaseClientV2Test):
     @unittest2.expectedFailure
     def test_create_failure2(self):
         self.mock_http_post(content=EXEC)
-        self.executions.create(EXEC['workflow_name'],
-                               list('343', 'sdfsd'))
+        self.executions.create(
+            EXEC['workflow_name'],
+            list('343', 'sdfsd')
+        )
 
     def test_update(self):
         mock = self.mock_http_put(content=EXEC)
@@ -76,21 +124,57 @@ class TestExecutionsV2(base.BaseClientV2Test):
         ex = self.executions.update(EXEC['id'], EXEC['state'])
 
         self.assertIsNotNone(ex)
-        self.assertEqual(executions.Execution(self.executions, EXEC).to_dict(),
-                         ex.to_dict())
-        mock.assert_called_once_with(
-            URL_TEMPLATE_ID % EXEC['id'], json.dumps(body))
+
+        self.assertDictEqual(
+            executions.Execution(self.executions, EXEC).to_dict(),
+            ex.to_dict()
+        )
+
+        self.assertEqual(URL_TEMPLATE_ID % EXEC['id'], mock.call_args[0][0])
+        self.assertDictEqual(body, json.loads(mock.call_args[0][1]))
+
+    def test_update_env(self):
+        mock = self.mock_http_put(content=EXEC)
+        body = {
+            'state': EXEC['state'],
+            'params': {
+                'env': {'k1': 'foobar'}
+            }
+        }
+
+        ex = self.executions.update(
+            EXEC['id'],
+            EXEC['state'],
+            env={'k1': 'foobar'}
+        )
+
+        self.assertIsNotNone(ex)
+
+        self.assertDictEqual(
+            executions.Execution(self.executions, EXEC).to_dict(),
+            ex.to_dict()
+        )
+
+        self.assertEqual(URL_TEMPLATE_ID % EXEC['id'], mock.call_args[0][0])
+        self.assertDictEqual(body, json.loads(mock.call_args[0][1]))
 
     def test_list(self):
-        mock = self.mock_http_get(content={'executions': [EXEC]})
+        mock = self.mock_http_get(content={'executions': [EXEC, SUB_WF_EXEC]})
 
         execution_list = self.executions.list()
 
-        self.assertEqual(1, len(execution_list))
-        ex = execution_list[0]
+        self.assertEqual(2, len(execution_list))
 
-        self.assertEqual(executions.Execution(self.executions, EXEC).to_dict(),
-                         ex.to_dict())
+        self.assertDictEqual(
+            executions.Execution(self.executions, EXEC).to_dict(),
+            execution_list[0].to_dict()
+        )
+
+        self.assertDictEqual(
+            executions.Execution(self.executions, SUB_WF_EXEC).to_dict(),
+            execution_list[1].to_dict()
+        )
+
         mock.assert_called_once_with(URL_TEMPLATE)
 
     def test_list_with_pagination(self):
@@ -116,9 +200,24 @@ class TestExecutionsV2(base.BaseClientV2Test):
 
         ex = self.executions.get(EXEC['id'])
 
-        self.assertEqual(executions.Execution(self.executions, EXEC).to_dict(),
-                         ex.to_dict())
+        self.assertDictEqual(
+            executions.Execution(self.executions, EXEC).to_dict(),
+            ex.to_dict()
+        )
+
         mock.assert_called_once_with(URL_TEMPLATE_ID % EXEC['id'])
+
+    def test_get_sub_wf_ex(self):
+        mock = self.mock_http_get(content=SUB_WF_EXEC)
+
+        ex = self.executions.get(SUB_WF_EXEC['id'])
+
+        self.assertDictEqual(
+            executions.Execution(self.executions, SUB_WF_EXEC).to_dict(),
+            ex.to_dict()
+        )
+
+        mock.assert_called_once_with(URL_TEMPLATE_ID % SUB_WF_EXEC['id'])
 
     def test_delete(self):
         mock = self.mock_http_delete(status_code=204)

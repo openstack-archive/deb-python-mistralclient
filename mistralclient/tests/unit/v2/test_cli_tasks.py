@@ -1,4 +1,5 @@
-# Copyright 2014 Mirantis, Inc.
+# Copyright 2014 - Mirantis, Inc.
+# Copyright 2015 - StackStorm, Inc.
 # All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -48,14 +49,14 @@ EXPECTED_TASK_RESULT = ('123', 'some', 'thing', '321', 'RUNNING', None)
 
 class TestCLITasksV2(base.BaseCommandTest):
     def test_list(self):
-        self.client.tasks.list.return_value = (TASK,)
+        self.client.tasks.list.return_value = [TASK]
 
         result = self.call(task_cmd.List)
 
         self.assertEqual([EXPECTED_TASK_RESULT], result[1])
 
     def test_list_with_workflow_execution(self):
-        self.client.tasks.list.return_value = (TASK,)
+        self.client.tasks.list.return_value = [TASK]
 
         result = self.call(task_cmd.List, app_args=['workflow_execution'])
 
@@ -99,5 +100,25 @@ class TestCLITasksV2(base.BaseCommandTest):
         self.client.tasks.rerun.return_value = TASK
 
         result = self.call(task_cmd.Rerun, app_args=['id', '--resume'])
+
+        self.assertEqual(EXPECTED_TASK_RESULT, result[1])
+
+    def test_rerun_update_env(self):
+        self.client.tasks.rerun.return_value = TASK
+
+        result = self.call(
+            task_cmd.Rerun,
+            app_args=['id', '--env', '{"k1": "foobar"}']
+        )
+
+        self.assertEqual(EXPECTED_TASK_RESULT, result[1])
+
+    def test_rerun_no_reset_update_env(self):
+        self.client.tasks.rerun.return_value = TASK
+
+        result = self.call(
+            task_cmd.Rerun,
+            app_args=['id', '--resume', '--env', '{"k1": "foobar"}']
+        )
 
         self.assertEqual(EXPECTED_TASK_RESULT, result[1])

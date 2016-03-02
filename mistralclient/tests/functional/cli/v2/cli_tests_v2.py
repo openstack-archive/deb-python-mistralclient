@@ -50,7 +50,8 @@ class SimpleMistralCLITests(base.MistralCLIAuth):
             self.mistral('execution-list'))
         self.assertTableStruct(
             executions,
-            ['ID', 'Workflow', 'State', 'Created at', 'Updated at']
+            ['ID', 'Workflow name', 'Workflow ID', 'State', 'Created at',
+             'Updated at']
         )
 
     def test_tasks_list(self):
@@ -241,37 +242,85 @@ class WorkflowCLITests(base_v2.MistralClientTestBase):
     def test_workflow_update(self):
         wf = self.workflow_create(self.wf_def)
         wf_name = wf[0]['Name']
+        wf_id = wf[0]['ID']
 
         created_wf_info = self.get_item_info(
-            get_from=wf, get_by='Name', value=wf_name)
+            get_from=wf,
+            get_by='Name',
+            value=wf_name
+        )
 
+        # Update a workflow with definition unchanged.
         upd_wf = self.mistral_admin(
-            'workflow-update', params='{0}'.format(self.wf_def))
+            'workflow-update',
+            params='{0}'.format(self.wf_def)
+        )
+
         self.assertTableStruct(upd_wf, ['Name', 'Created at', 'Updated at'])
 
         updated_wf_info = self.get_item_info(
-            get_from=upd_wf, get_by='Name', value=wf_name)
+            get_from=upd_wf,
+            get_by='Name',
+            value=wf_name
+        )
 
         self.assertEqual(wf_name, upd_wf[0]['Name'])
+        self.assertEqual(
+            created_wf_info['Created at'].split(".")[0],
+            updated_wf_info['Created at']
+        )
+        self.assertEqual(
+            created_wf_info['Updated at'],
+            updated_wf_info['Updated at']
+        )
 
-        self.assertEqual(created_wf_info['Created at'].split(".")[0],
-                         updated_wf_info['Created at'])
-        self.assertEqual(created_wf_info['Updated at'],
-                         updated_wf_info['Updated at'])
-
+        # Update a workflow with definition changed.
         upd_wf = self.mistral_admin(
-            'workflow-update', params='{0}'.format(self.wf_with_delay_def))
+            'workflow-update',
+            params='{0}'.format(self.wf_with_delay_def)
+        )
+
         self.assertTableStruct(upd_wf, ['Name', 'Created at', 'Updated at'])
 
         updated_wf_info = self.get_item_info(
-            get_from=upd_wf, get_by='Name', value=wf_name)
+            get_from=upd_wf,
+            get_by='Name',
+            value=wf_name
+        )
 
         self.assertEqual(wf_name, upd_wf[0]['Name'])
+        self.assertEqual(
+            created_wf_info['Created at'].split(".")[0],
+            updated_wf_info['Created at']
+        )
+        self.assertNotEqual(
+            created_wf_info['Updated at'],
+            updated_wf_info['Updated at']
+        )
 
-        self.assertEqual(created_wf_info['Created at'].split(".")[0],
-                         updated_wf_info['Created at'])
-        self.assertNotEqual(created_wf_info['Updated at'],
-                            updated_wf_info['Updated at'])
+        # Update a workflow with uuid.
+        upd_wf = self.mistral_admin(
+            'workflow-update',
+            params='{0} --id {1}'.format(self.wf_with_delay_def, wf_id)
+        )
+
+        self.assertTableStruct(upd_wf, ['Name', 'Created at', 'Updated at'])
+
+        updated_wf_info = self.get_item_info(
+            get_from=upd_wf,
+            get_by='ID',
+            value=wf_id
+        )
+
+        self.assertEqual(wf_name, upd_wf[0]['Name'])
+        self.assertEqual(
+            created_wf_info['Created at'].split(".")[0],
+            updated_wf_info['Created at']
+        )
+        self.assertNotEqual(
+            created_wf_info['Updated at'],
+            updated_wf_info['Updated at']
+        )
 
     def test_workflow_update_truncate_input(self):
         input_value = "very_long_input_parameter_name_that_should_be_truncated"
@@ -298,6 +347,15 @@ class WorkflowCLITests(base_v2.MistralClientTestBase):
         wf_name = created[0]['Name']
 
         fetched = self.mistral_admin('workflow-get', params=wf_name)
+        fetched_wf_name = self.get_value_of_field(fetched, 'Name')
+        self.assertEqual(wf_name, fetched_wf_name)
+
+    def test_workflow_get_with_id(self):
+        created = self.workflow_create(self.wf_def)
+        wf_name = created[0]['Name']
+        wf_id = created[0]['ID']
+
+        fetched = self.mistral_admin('workflow-get', params=wf_id)
         fetched_wf_name = self.get_value_of_field(fetched, 'Name')
         self.assertEqual(wf_name, fetched_wf_name)
 
@@ -356,17 +414,19 @@ class ExecutionCLITests(base_v2.MistralClientTestBase):
         exec_id = self.get_value_of_field(execution, 'ID')
         self.assertTableStruct(execution, ['Field', 'Value'])
 
-        wf = self.get_value_of_field(execution, 'Workflow')
+        wf_name = self.get_value_of_field(execution, 'Workflow name')
+        wf_id = self.get_value_of_field(execution, 'Workflow ID')
         created_at = self.get_value_of_field(execution, 'Created at')
         description = self.get_value_of_field(execution, 'Description')
 
-        self.assertEqual(self.direct_wf['Name'], wf)
+        self.assertEqual(self.direct_wf['Name'], wf_name)
+        self.assertIsNotNone(wf_id)
         self.assertIsNotNone(created_at)
         self.assertEqual("execution test", description)
 
         execs = self.mistral_admin('execution-list')
         self.assertIn(exec_id, [ex['ID'] for ex in execs])
-        self.assertIn(wf, [ex['Workflow'] for ex in execs])
+        self.assertIn(wf_name, [ex['Workflow name'] for ex in execs])
 
         self.mistral_admin('execution-delete', params=exec_id)
 
@@ -414,10 +474,12 @@ class ExecutionCLITests(base_v2.MistralClientTestBase):
             'execution-get', params='{0}'.format(exec_id))
 
         gotten_id = self.get_value_of_field(execution, 'ID')
-        wf = self.get_value_of_field(execution, 'Workflow')
+        wf_name = self.get_value_of_field(execution, 'Workflow name')
+        wf_id = self.get_value_of_field(execution, 'Workflow ID')
 
+        self.assertIsNotNone(wf_id)
         self.assertEqual(exec_id, gotten_id)
-        self.assertEqual(self.direct_wf['Name'], wf)
+        self.assertEqual(self.direct_wf['Name'], wf_name)
 
     def test_execution_get_input(self):
         execution = self.execution_create(self.direct_wf['Name'])
