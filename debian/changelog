@@ -1,4 +1,4 @@
-python-mistralclient (1:2.0.0-1) UNRELEASED; urgency=medium
+python-mistralclient (1:2.0.0-2) experimental; urgency=medium
 
   [ Ondřej Nový ]
   * Fixed VCS URLs (https).
@@ -7,7 +7,10 @@ python-mistralclient (1:2.0.0-1) UNRELEASED; urgency=medium
   * New upstream release.
   * d/control: Align (Build-)Depends with upsream.
 
- -- Corey Bryant <corey.bryant@canonical.com>  Wed, 02 Mar 2016 08:35:09 -0500
+  [ Thomas Goirand ]
+  * Standards-Version: 3.9.7 (no change).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 21 Mar 2016 12:33:09 +0100
 
 python-mistralclient (1:1.2.0-1) experimental; urgency=medium
 
