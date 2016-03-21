@@ -1,4 +1,4 @@
-python-mistralclient (1:2.0.0-2) experimental; urgency=medium
+python-mistralclient (1:2.0.0-1) experimental; urgency=medium
 
   [ Ondřej Nový ]
   * Fixed VCS URLs (https).
