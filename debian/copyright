@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: python-mistralclient
-Source: git://github.com/stackforge/python-mistralclient.git
+Source: https://github.com/openstack/python-mistralclient.git
 
 Files: *
 Copyright: (c) 2010, Jacob Kaplan-Moss
