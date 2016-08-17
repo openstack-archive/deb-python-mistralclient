@@ -1,0 +1,9 @@
+Code-Review+2: Lingxian Kong <anlin.kong@gmail.com>
+Code-Review+2: hardik <hardik.parekh@nectechnologies.in>
+Workflow+1: hardik <hardik.parekh@nectechnologies.in>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 29 Jul 2016 05:52:17 +0000
+Reviewed-on: https://review.openstack.org/346331
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master

@@ -1,0 +1,9 @@
+Code-Review+2: hardik <hardik.parekh@nectechnologies.in>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 03 Jun 2016 19:48:43 +0000
+Reviewed-on: https://review.openstack.org/325082
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master

@@ -1,0 +1,11 @@
+Code-Review+1: Michal Gershenzon <michal.gershenzon@nokia.com>
+Code-Review+2: Dawid Deja <dawid.deja@intel.com>
+Code-Review+1: Dmitri Zimine <dz@stackstorm.com>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 02 Aug 2016 06:50:21 +0000
+Reviewed-on: https://review.openstack.org/346280
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master

@@ -1,0 +1,14 @@
+Code-Review+1: Steve Martinelli <s.martinelli@gmail.com>
+Code-Review+1: John Trowbridge <trown@redhat.com>
+Code-Review+1: James Slagle <jslagle@redhat.com>
+Code-Review+1: wes hayutin <whayutin@redhat.com>
+Code-Review+1: Jeff Peeler <jpeeler@redhat.com>
+Code-Review+2: Lingxian Kong <anlin.kong@gmail.com>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 28 Jul 2016 11:42:44 +0000
+Reviewed-on: https://review.openstack.org/347354
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master

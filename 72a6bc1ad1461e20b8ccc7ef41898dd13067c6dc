@@ -1,0 +1,10 @@
+Code-Review+2: Lingxian Kong <anlin.kong@gmail.com>
+Code-Review+2: Anastasia Kuznetsova <akuznetsova@mirantis.com>
+Code-Review+1: Nikolay Mahotkin <nmakhotkin@mirantis.com>
+Workflow+1: Lingxian Kong <anlin.kong@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 29 Feb 2016 21:38:07 +0000
+Reviewed-on: https://review.openstack.org/284479
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master

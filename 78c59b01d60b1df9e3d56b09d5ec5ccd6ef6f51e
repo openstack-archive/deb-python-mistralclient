@@ -1,0 +1,10 @@
+Code-Review+1: Clint Adams <clint@gcfm.net>
+Code-Review+1: hardik <hardik.parekh@nectechnologies.in>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 04 Mar 2016 09:22:43 +0000
+Reviewed-on: https://review.openstack.org/288031
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master

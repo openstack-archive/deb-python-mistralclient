@@ -1,0 +1,10 @@
+Code-Review+2: Dmitri Zimine <dz@stackstorm.com>
+Code-Review+1: manas kelshikar <manas@stackstorm.com>
+Code-Review+2: Nikolay Mahotkin <nmakhotkin@mirantis.com>
+Workflow+1: Nikolay Mahotkin <nmakhotkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 04 Mar 2016 09:58:02 +0000
+Reviewed-on: https://review.openstack.org/286942
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
