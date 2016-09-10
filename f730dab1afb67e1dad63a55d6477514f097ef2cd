@@ -1,0 +1,14 @@
+Code-Review+1: Oleksandr Martsyniuk <omartsyniuk@mirantis.com>
+Code-Review+1: Taras Kostyuk <tkostyuk@mirantis.com>
+Code-Review+1: Kostyantyn Kalynovskyi <kkalynovskyi@mirantis.com>
+Code-Review+1: Hardik Parekh <hardik.parekh047@gmail.com>
+Code-Review+1: Dougal Matthews <dougal@redhat.com>
+Code-Review+2: Lingxian Kong <anlin.kong@gmail.com>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 05 Sep 2016 03:31:43 +0000
+Reviewed-on: https://review.openstack.org/364267
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/stable/mitaka

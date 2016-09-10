@@ -1,0 +1,10 @@
+Code-Review+1: Lingxian Kong <anlin.kong@gmail.com>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Code-Review+2: Nikolay Mahotkin <nmakhotkin@mirantis.com>
+Workflow+1: Nikolay Mahotkin <nmakhotkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 11 Mar 2016 06:53:12 +0000
+Reviewed-on: https://review.openstack.org/291337
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/stable/mitaka
