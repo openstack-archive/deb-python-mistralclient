@@ -1,5 +1,7 @@
 # Copyright 2014 - Mirantis, Inc.
 # Copyright 2015 - StackStorm, Inc.
+# Copyright 2016 - Brocade Communications Systems, Inc.
+#
 # All Rights Reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -19,8 +21,7 @@ import json
 import logging
 import os.path
 
-from cliff import command
-from cliff import show
+from osc_lib.command import command
 
 from mistralclient.commands.v2 import base
 from mistralclient import utils
@@ -119,24 +120,24 @@ class List(base.MistralLister):
         )
 
 
-class Get(show.ShowOne):
+class Get(command.ShowOne):
     """Show specific execution."""
 
     def get_parser(self, prog_name):
         parser = super(Get, self).get_parser(prog_name)
 
-        parser.add_argument('id', help='Execution identifier')
+        parser.add_argument('execution', help='Execution identifier')
 
         return parser
 
     def take_action(self, parsed_args):
         mistral_client = self.app.client_manager.workflow_engine
-        execution = mistral_client.executions.get(parsed_args.id)
+        execution = mistral_client.executions.get(parsed_args.execution)
 
         return format(execution)
 
 
-class Create(show.ShowOne):
+class Create(command.ShowOne):
     """Create new execution."""
 
     def get_parser(self, prog_name):
@@ -203,7 +204,7 @@ class Delete(command.Command):
         parser = super(Delete, self).get_parser(prog_name)
 
         parser.add_argument(
-            'id',
+            'execution',
             nargs='+',
             help='Id of execution identifier(s).'
         )
@@ -215,13 +216,13 @@ class Delete(command.Command):
 
         utils.do_action_on_many(
             lambda s: mistral_client.executions.delete(s),
-            parsed_args.id,
+            parsed_args.execution,
             "Request to delete execution %s has been accepted.",
             "Unable to delete the specified execution(s)."
         )
 
 
-class Update(show.ShowOne):
+class Update(command.ShowOne):
     """Update execution."""
 
     def get_parser(self, prog_name):
@@ -236,7 +237,7 @@ class Update(show.ShowOne):
             '-s',
             '--state',
             dest='state',
-            choices=['RUNNING', 'PAUSED', 'SUCCESS', 'ERROR'],
+            choices=['RUNNING', 'PAUSED', 'SUCCESS', 'ERROR', 'CANCELLED'],
             help='Execution state'
         )
 

@@ -20,6 +20,7 @@ import logging
 import sys
 
 from mistralclient.api import client
+from mistralclient.auth import auth_types
 import mistralclient.commands.v2.action_executions
 import mistralclient.commands.v2.actions
 import mistralclient.commands.v2.cron_triggers
@@ -30,15 +31,14 @@ import mistralclient.commands.v2.services
 import mistralclient.commands.v2.tasks
 import mistralclient.commands.v2.workbooks
 import mistralclient.commands.v2.workflows
+from mistralclient import exceptions as exe
 from mistralclient.openstack.common import cliutils as c
 
 from cliff import app
-from cliff import command
 from cliff import commandmanager
+from osc_lib.command import command
 
 import argparse
-
-LOG = logging.getLogger(__name__)
 
 
 class OpenStackHelpFormatter(argparse.HelpFormatter):
@@ -142,18 +142,21 @@ class MistralShell(app.App):
         :paramtype extra_kwargs: dict
         """
         argparse_kwargs = argparse_kwargs or {}
+
         parser = argparse.ArgumentParser(
             description=description,
             add_help=False,
             formatter_class=OpenStackHelpFormatter,
             **argparse_kwargs
         )
+
         parser.add_argument(
             '--version',
             action='version',
             version='%(prog)s {0}'.format(version),
             help='Show program\'s version number and exit.'
         )
+
         parser.add_argument(
             '-v', '--verbose',
             action='count',
@@ -161,12 +164,14 @@ class MistralShell(app.App):
             default=self.DEFAULT_VERBOSE_LEVEL,
             help='Increase verbosity of output. Can be repeated.',
         )
+
         parser.add_argument(
             '--log-file',
             action='store',
             default=None,
             help='Specify a file to log output. Disabled by default.',
         )
+
         parser.add_argument(
             '-q', '--quiet',
             action='store_const',
@@ -174,6 +179,7 @@ class MistralShell(app.App):
             const=0,
             help='Suppress output except warnings and errors.',
         )
+
         parser.add_argument(
             '-h', '--help',
             action=HelpAction,
@@ -181,12 +187,14 @@ class MistralShell(app.App):
             default=self,  # tricky
             help="Show this help message and exit.",
         )
+
         parser.add_argument(
             '--debug',
             default=False,
             action='store_true',
             help='Show tracebacks on errors.',
         )
+
         parser.add_argument(
             '--os-mistral-url',
             action='store',
@@ -194,6 +202,7 @@ class MistralShell(app.App):
             default=c.env('OS_MISTRAL_URL'),
             help='Mistral API host (Env: OS_MISTRAL_URL)'
         )
+
         parser.add_argument(
             '--os-mistral-version',
             action='store',
@@ -202,6 +211,7 @@ class MistralShell(app.App):
             help='Mistral API version (default = v2) (Env: '
                  'OS_MISTRAL_VERSION)'
         )
+
         parser.add_argument(
             '--os-mistral-service-type',
             action='store',
@@ -211,6 +221,7 @@ class MistralShell(app.App):
                  'keystone-endpoint) (default = workflowv2) (Env: '
                  'OS_MISTRAL_SERVICE_TYPE)'
         )
+
         parser.add_argument(
             '--os-mistral-endpoint-type',
             action='store',
@@ -220,13 +231,15 @@ class MistralShell(app.App):
                  'keystone-endpoint) (default = publicURL) (Env: '
                  'OS_MISTRAL_ENDPOINT_TYPE)'
         )
+
         parser.add_argument(
             '--os-username',
             action='store',
             dest='username',
-            default=c.env('OS_USERNAME', default='admin'),
+            default=c.env('OS_USERNAME'),
             help='Authentication username (Env: OS_USERNAME)'
         )
+
         parser.add_argument(
             '--os-password',
             action='store',
@@ -234,6 +247,7 @@ class MistralShell(app.App):
             default=c.env('OS_PASSWORD'),
             help='Authentication password (Env: OS_PASSWORD)'
         )
+
         parser.add_argument(
             '--os-tenant-id',
             action='store',
@@ -241,6 +255,7 @@ class MistralShell(app.App):
             default=c.env('OS_TENANT_ID'),
             help='Authentication tenant identifier (Env: OS_TENANT_ID)'
         )
+
         parser.add_argument(
             '--os-tenant-name',
             action='store',
@@ -248,6 +263,7 @@ class MistralShell(app.App):
             default=c.env('OS_TENANT_NAME', 'Default'),
             help='Authentication tenant name (Env: OS_TENANT_NAME)'
         )
+
         parser.add_argument(
             '--os-auth-token',
             action='store',
@@ -255,6 +271,7 @@ class MistralShell(app.App):
             default=c.env('OS_AUTH_TOKEN'),
             help='Authentication token (Env: OS_AUTH_TOKEN)'
         )
+
         parser.add_argument(
             '--os-auth-url',
             action='store',
@@ -262,13 +279,31 @@ class MistralShell(app.App):
             default=c.env('OS_AUTH_URL'),
             help='Authentication URL (Env: OS_AUTH_URL)'
         )
+
+        parser.add_argument(
+            '--os-cert',
+            action='store',
+            dest='os_cert',
+            default=c.env('OS_CERT'),
+            help='Client Certificate (Env: OS_CERT)'
+        )
+
+        parser.add_argument(
+            '--os-key',
+            action='store',
+            dest='os_key',
+            default=c.env('OS_KEY'),
+            help='Client Key (Env: OS_KEY)'
+        )
+
         parser.add_argument(
             '--os-cacert',
             action='store',
-            dest='cacert',
+            dest='os_cacert',
             default=c.env('OS_CACERT'),
             help='Authentication CA Certificate (Env: OS_CACERT)'
         )
+
         parser.add_argument(
             '--insecure',
             action='store_true',
@@ -277,6 +312,119 @@ class MistralShell(app.App):
             help='Disables SSL/TLS certificate verification '
                  '(Env: MISTRALCLIENT_INSECURE)'
         )
+
+        parser.add_argument(
+            '--auth-type',
+            action='store',
+            dest='auth_type',
+            default=c.env('MISTRAL_AUTH_TYPE', default=auth_types.KEYSTONE),
+            help='Authentication type. Valid options are: %s.'
+                 ' (Env: MISTRAL_AUTH_TYPE)' % auth_types.ALL
+        )
+
+        parser.add_argument(
+            '--openid-client-id',
+            action='store',
+            dest='client_id',
+            default=c.env('OPENID_CLIENT_ID'),
+            help='Client ID (according to OpenID Connect).'
+                 ' (Env: OPENID_CLIENT_ID)'
+        )
+
+        parser.add_argument(
+            '--openid-client-secret',
+            action='store',
+            dest='client_secret',
+            default=c.env('OPENID_CLIENT_SECRET'),
+            help='Client secret (according to OpenID Connect)'
+                 ' (Env: OPENID_CLIENT_SECRET)'
+        )
+
+        parser.add_argument(
+            '--os-target-username',
+            action='store',
+            dest='target_username',
+            default=c.env('OS_TARGET_USERNAME', default='admin'),
+            help='Authentication username for target cloud'
+                 ' (Env: OS_TARGET_USERNAME)'
+        )
+
+        parser.add_argument(
+            '--os-target-password',
+            action='store',
+            dest='target_password',
+            default=c.env('OS_TARGET_PASSWORD'),
+            help='Authentication password for target cloud'
+                 ' (Env: OS_TARGET_PASSWORD)'
+        )
+
+        parser.add_argument(
+            '--os-target-tenant-id',
+            action='store',
+            dest='target_tenant_id',
+            default=c.env('OS_TARGET_TENANT_ID'),
+            help='Authentication tenant identifier for target cloud'
+                 ' (Env: OS_TARGET_TENANT_ID)'
+        )
+
+        parser.add_argument(
+            '--os-target-tenant-name',
+            action='store',
+            dest='target_tenant_name',
+            default=c.env('OS_TARGET_TENANT_NAME', 'Default'),
+            help='Authentication tenant name for target cloud'
+                 ' (Env: OS_TARGET_TENANT_NAME)'
+        )
+
+        parser.add_argument(
+            '--os-target-auth-token',
+            action='store',
+            dest='target_token',
+            default=c.env('OS_TARGET_AUTH_TOKEN'),
+            help='Authentication token for target cloud'
+                 ' (Env: OS_TARGET_AUTH_TOKEN)'
+        )
+
+        parser.add_argument(
+            '--os-target-auth-url',
+            action='store',
+            dest='target_auth_url',
+            default=c.env('OS_TARGET_AUTH_URL'),
+            help='Authentication URL for target cloud'
+                 ' (Env: OS_TARGET_AUTH_URL)'
+        )
+
+        parser.add_argument(
+            '--os-target_cacert',
+            action='store',
+            dest='target_cacert',
+            default=c.env('OS_TARGET_CACERT'),
+            help='Authentication CA Certificate for target cloud'
+                 ' (Env: OS_TARGET_CACERT)'
+        )
+
+        parser.add_argument(
+            '--target_insecure',
+            action='store_true',
+            dest='target_insecure',
+            default=c.env('TARGET_MISTRALCLIENT_INSECURE', default=False),
+            help='Disables SSL/TLS certificate verification for target cloud '
+                 '(Env: TARGET_MISTRALCLIENT_INSECURE)'
+        )
+
+        parser.add_argument(
+            '--profile',
+            dest='profile',
+            metavar='HMAC_KEY',
+            help='HMAC key to use for encrypting context data for performance '
+                 'profiling of operation. This key should be one of the '
+                 'values configured for the osprofiler middleware in mistral, '
+                 'it is specified in the profiler section of the mistral '
+                 'configuration (i.e. /etc/mistral/mistral.conf). Without the '
+                 'key, profiling will not be triggered even if osprofiler is '
+                 'enabled on the server side.'
+        )
+
         return parser
 
     def initialize_app(self, argv):
@@ -299,6 +447,24 @@ class MistralShell(app.App):
         if do_help or ('bash-completion' in argv):
             self.options.auth_url = None
 
+        if self.options.auth_url and not self.options.token:
+            if not self.options.username:
+                raise exe.IllegalArgumentException(
+                    ("You must provide a username "
+                     "via --os-username env[OS_USERNAME]")
+                )
+
+            if not self.options.password:
+                raise exe.IllegalArgumentException(
+                    ("You must provide a password "
+                     "via --os-password env[OS_PASSWORD]")
+                )
+
+        kwargs = {
+            'cert': self.options.os_cert,
+            'key': self.options.os_key
+        }
+
         self.client = client.client(
             mistral_url=self.options.mistral_url,
             username=self.options.username,
@@ -309,12 +475,25 @@ class MistralShell(app.App):
             endpoint_type=self.options.endpoint_type,
             service_type=self.options.service_type,
             auth_token=self.options.token,
-            cacert=self.options.cacert,
-            insecure=self.options.insecure
+            cacert=self.options.os_cacert,
+            insecure=self.options.insecure,
+            profile=self.options.profile,
+            auth_type=self.options.auth_type,
+            client_id=self.options.client_id,
+            client_secret=self.options.client_secret,
+            target_username=self.options.target_username,
+            target_api_key=self.options.target_password,
+            target_project_name=self.options.target_tenant_name,
+            target_auth_url=self.options.target_auth_url,
+            target_project_id=self.options.target_tenant_id,
+            target_auth_token=self.options.target_token,
+            target_cacert=self.options.target_cacert,
+            target_insecure=self.options.target_insecure,
+            **kwargs
         )
 
         # Adding client_manager variable to make mistral client work with
-        # unified openstack client.
+        # unified OpenStack client.
         ClientManager = type(
             'ClientManager',
             (object,),
@@ -403,6 +582,7 @@ class MistralShell(app.App):
             'action-update': mistralclient.commands.v2.actions.Update,
             'action-get-definition':
             mistralclient.commands.v2.actions.GetDefinition,
+            'action-validate': mistralclient.commands.v2.actions.Validate,
             'cron-trigger-list': mistralclient.commands.v2.cron_triggers.List,
             'cron-trigger-get': mistralclient.commands.v2.cron_triggers.Get,
             'cron-trigger-create':

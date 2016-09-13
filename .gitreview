@@ -1,4 +1,5 @@
 [gerrit]
 host=review.openstack.org
 port=29418
-project=openstack/python-mistralclient.git
+project=openstack/deb-python-mistralclient.git
+defaultbranch=debian/newton

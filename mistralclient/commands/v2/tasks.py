@@ -19,8 +19,7 @@ import json
 import logging
 import os.path
 
-from cliff import command
-from cliff import show
+from osc_lib.command import command
 
 from mistralclient.commands.v2 import base
 from mistralclient import utils
@@ -80,19 +79,19 @@ class List(base.MistralLister):
         return mistral_client.tasks.list(parsed_args.workflow_execution)
 
 
-class Get(show.ShowOne):
+class Get(command.ShowOne):
     """Show specific task."""
 
     def get_parser(self, prog_name):
         parser = super(Get, self).get_parser(prog_name)
 
-        parser.add_argument('id', help='Task identifier')
+        parser.add_argument('task', help='Task identifier')
 
         return parser
 
     def take_action(self, parsed_args):
         mistral_client = self.app.client_manager.workflow_engine
-        execution = mistral_client.tasks.get(parsed_args.id)
+        execution = mistral_client.tasks.get(parsed_args.task)
 
         return format(execution)
 
@@ -145,7 +144,7 @@ class GetPublished(command.Command):
         self.app.stdout.write(result or "\n")
 
 
-class Rerun(show.ShowOne):
+class Rerun(command.ShowOne):
     """Rerun an existing task."""
 
     def get_parser(self, prog_name):

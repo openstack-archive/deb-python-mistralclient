@@ -14,16 +14,11 @@
 #    limitations under the License.
 
 import argparse
-import logging
 
-from cliff import command
-from cliff import show
+from osc_lib.command import command
 
 from mistralclient.commands.v2 import base
 from mistralclient import utils
-
-
-LOG = logging.getLogger(__name__)
 
 
 def format(workbook=None):
@@ -63,14 +58,14 @@ class List(base.MistralLister):
         return mistral_client.workbooks.list()
 
 
-class Get(show.ShowOne):
+class Get(command.ShowOne):
     """Show specific workbook."""
 
     def get_parser(self, prog_name):
         parser = super(Get, self).get_parser(prog_name)
 
         parser.add_argument(
-            'name',
+            'workbook',
             help='Workbook name'
         )
 
@@ -78,12 +73,12 @@ class Get(show.ShowOne):
 
     def take_action(self, parsed_args):
         mistral_client = self.app.client_manager.workflow_engine
-        workbook = mistral_client.workbooks.get(parsed_args.name)
+        workbook = mistral_client.workbooks.get(parsed_args.workbook)
 
         return format(workbook)
 
 
-class Create(show.ShowOne):
+class Create(command.ShowOne):
     """Create new workbook."""
 
     def get_parser(self, prog_name):
@@ -112,7 +107,7 @@ class Delete(command.Command):
     def get_parser(self, prog_name):
         parser = super(Delete, self).get_parser(prog_name)
 
-        parser.add_argument('name', nargs='+', help='Name of workbook(s).')
+        parser.add_argument('workbook', nargs='+', help='Name of workbook(s).')
 
         return parser
 
@@ -120,13 +115,13 @@ class Delete(command.Command):
         mistral_client = self.app.client_manager.workflow_engine
         utils.do_action_on_many(
             lambda s: mistral_client.workbooks.delete(s),
-            parsed_args.name,
+            parsed_args.workbook,
             "Request to delete workbook %s has been accepted.",
             "Unable to delete the specified workbook(s)."
         )
 
 
-class Update(show.ShowOne):
+class Update(command.ShowOne):
     """Update workbook."""
 
     def get_parser(self, prog_name):
@@ -166,18 +161,14 @@ class GetDefinition(command.Command):
         self.app.stdout.write(definition or "\n")
 
 
-class Validate(show.ShowOne):
+class Validate(command.ShowOne):
     """Validate workbook."""
 
     def _format(self, result=None):
         columns = ('Valid', 'Error')
 
         if result:
-            data = (result.get('valid'),)
-            if not result.get('error'):
-                data += (None,)
-            else:
-                data += (result.get('error'),)
+            data = (result.get('valid'), result.get('error'),)
         else:
             data = (tuple('<none>' for _ in range(len(columns))),)
 

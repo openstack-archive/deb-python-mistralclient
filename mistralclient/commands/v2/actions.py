@@ -15,15 +15,11 @@
 #
 
 import argparse
-import logging
 
-from cliff import command
-from cliff import show
+from osc_lib.command import command
 
 from mistralclient.commands.v2 import base
 from mistralclient import utils
-
-LOG = logging.getLogger(__name__)
 
 
 def format_list(action=None):
@@ -32,6 +28,7 @@ def format_list(action=None):
 
 def format(action=None, lister=False):
     columns = (
+        'ID',
         'Name',
         'Is system',
         'Input',
@@ -48,6 +45,7 @@ def format(action=None, lister=False):
                 else base.cut(action.description))
 
         data = (
+            action.id,
             action.name,
             action.is_system,
             input,
@@ -78,19 +76,19 @@ class List(base.MistralLister):
         return mistral_client.actions.list()
 
 
-class Get(show.ShowOne):
+class Get(command.ShowOne):
     """Show specific action."""
 
     def get_parser(self, prog_name):
         parser = super(Get, self).get_parser(prog_name)
 
-        parser.add_argument('name', help='Action name')
+        parser.add_argument('action', help='Action (name or ID)')
 
         return parser
 
     def take_action(self, parsed_args):
         mistral_client = self.app.client_manager.workflow_engine
-        action = mistral_client.actions.get(parsed_args.name)
+        action = mistral_client.actions.get(parsed_args.action)
 
         return format(action)
 
@@ -138,7 +136,11 @@ class Delete(command.Command):
     def get_parser(self, prog_name):
         parser = super(Delete, self).get_parser(prog_name)
 
-        parser.add_argument('name', nargs='+', help='Name of action(s).')
+        parser.add_argument(
+            'action',
+            nargs='+',
+            help='Name or ID of action(s).'
+        )
 
         return parser
 
@@ -147,7 +149,7 @@ class Delete(command.Command):
 
         utils.do_action_on_many(
             lambda s: mistral_client.actions.delete(s),
-            parsed_args.name,
+            parsed_args.action,
             "Request to delete action %s has been accepted.",
             "Unable to delete the specified action(s)."
         )
@@ -164,6 +166,7 @@ class Update(base.MistralLister):
             type=argparse.FileType('r'),
             help='Action definition file'
         )
+        parser.add_argument('--id', help='Action ID.')
         parser.add_argument(
             '--public',
             action='store_true',
@@ -182,7 +185,8 @@ class Update(base.MistralLister):
 
         return mistral_client.actions.update(
             parsed_args.definition.read(),
-            scope=scope
+            scope=scope,
+            id=parsed_args.id
         )
 
 
@@ -201,3 +205,37 @@ class GetDefinition(command.Command):
         definition = mistral_client.actions.get(parsed_args.name).definition
 
         self.app.stdout.write(definition or "\n")
+
+
+class Validate(command.ShowOne):
+    """Validate action."""
+
+    def _format(self, result=None):
+        columns = ('Valid', 'Error')
+
+        if result:
+            data = (result.get('valid'), result.get('error'))
+        else:
+            data = (tuple('<none>' for _ in range(len(columns))),)
+
+        return columns, data
+
+    def get_parser(self, prog_name):
+        parser = super(Validate, self).get_parser(prog_name)
+
+        parser.add_argument(
+            'definition',
+            type=argparse.FileType('r'),
+            help='action definition file'
+        )
+
+        return parser
+
+    def take_action(self, parsed_args):
+        mistral_client = self.app.client_manager.workflow_engine
+
+        result = mistral_client.actions.validate(
+            parsed_args.definition.read()
+        )
+
+        return self._format(result)

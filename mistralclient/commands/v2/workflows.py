@@ -14,16 +14,12 @@
 #    limitations under the License.
 
 import argparse
-import logging
 
 from cliff import command
 from cliff import show
 
 from mistralclient.commands.v2 import base
 from mistralclient import utils
-
-
-LOG = logging.getLogger(__name__)
 
 
 def format_list(workflow=None):
@@ -80,13 +76,13 @@ class Get(show.ShowOne):
     def get_parser(self, prog_name):
         parser = super(Get, self).get_parser(prog_name)
 
-        parser.add_argument('identifier', help='Workflow ID or name.')
+        parser.add_argument('workflow', help='Workflow ID or name.')
 
         return parser
 
     def take_action(self, parsed_args):
         mistral_client = self.app.client_manager.workflow_engine
-        wf = mistral_client.workflows.get(parsed_args.identifier)
+        wf = mistral_client.workflows.get(parsed_args.workflow)
 
         return format(wf)
 
@@ -135,7 +131,7 @@ class Delete(command.Command):
         parser = super(Delete, self).get_parser(prog_name)
 
         parser.add_argument(
-            'identifier',
+            'workflow',
             nargs='+',
             help='Name or ID of workflow(s).'
         )
@@ -146,7 +142,7 @@ class Delete(command.Command):
         mistral_client = self.app.client_manager.workflow_engine
         utils.do_action_on_many(
             lambda s: mistral_client.workflows.delete(s),
-            parsed_args.identifier,
+            parsed_args.workflow,
             "Request to delete workflow %s has been accepted.",
             "Unable to delete the specified workflow(s)."
         )
@@ -210,11 +206,7 @@ class Validate(show.ShowOne):
         columns = ('Valid', 'Error')
 
         if result:
-            data = (result.get('valid'),)
-            if not result.get('error'):
-                data += (None,)
-            else:
-                data += (result.get('error'),)
+            data = (result.get('valid'), result.get('error'),)
         else:
             data = (tuple('<none>' for _ in range(len(columns))),)
 
