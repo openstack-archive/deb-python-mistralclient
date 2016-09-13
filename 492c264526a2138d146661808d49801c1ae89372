@@ -1,0 +1,9 @@
+Code-Review+2: Hardik Parekh <hardik.parekh047@gmail.com>
+Code-Review+2: Dawid Deja <dawid.deja@intel.com>
+Workflow+1: Dawid Deja <dawid.deja@intel.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 13 Sep 2016 10:00:01 +0000
+Reviewed-on: https://review.openstack.org/368841
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
