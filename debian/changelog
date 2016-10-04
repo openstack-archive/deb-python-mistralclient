@@ -1,4 +1,4 @@
-python-mistralclient (1:2.1.1-2) UNRELEASED; urgency=medium
+python-mistralclient (1:2.1.1-2) unstable; urgency=medium
 
   * d/s/options: extend-diff-ignore of .gitreview
   * d/control: Use correct branch in Vcs-* fields
