@@ -1,0 +1,14 @@
+Code-Review+1: Moshe Elisha <moshe.elisha@nokia.com>
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Code-Review+1: Gerald Lonlas <glonlas@internap.com>
+Code-Review+2: Hardik Parekh <hardik.parekh047@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Code-Review+1: Sharat Sharma <sharat.sharma@nectechnologies.in>
+Code-Review+1: Jizhaoxuan <zhaoxuan.ji@easystack.cn>
+Code-Review+2: Dougal Matthews <dougal@redhat.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 07 Dec 2016 17:34:57 +0000
+Reviewed-on: https://review.openstack.org/404249
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
