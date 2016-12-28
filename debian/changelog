@@ -1,8 +1,10 @@
-python-mistralclient (1:2.1.1-3) UNRELEASED; urgency=medium
+python-mistralclient (1:2.1.2-1) unstable; urgency=medium
 
+  * Team upload.
+  * New upstream release
   * Bumped debhelper compat version to 10
 
- -- Ondřej Nový <onovy@debian.org>  Thu, 24 Nov 2016 00:07:38 +0100
+ -- Ondřej Nový <onovy@debian.org>  Wed, 28 Dec 2016 23:24:09 +0100
 
 python-mistralclient (1:2.1.1-2) unstable; urgency=medium
 
