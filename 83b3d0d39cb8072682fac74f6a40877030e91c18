@@ -1,0 +1,10 @@
+Code-Review+2: Dougal Matthews <dougal@redhat.com>
+Code-Review+1: Sharat Sharma <sharat.sharma@nectechnologies.in>
+Code-Review+2: Lingxian Kong <anlin.kong@gmail.com>
+Workflow+1: Lingxian Kong <anlin.kong@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 21 Mar 2017 11:26:53 +0000
+Reviewed-on: https://review.openstack.org/447046
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
