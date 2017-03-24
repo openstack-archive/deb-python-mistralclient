@@ -1,0 +1,10 @@
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Code-Review+1: Sharat Sharma <sharat.sharma@nectechnologies.in>
+Workflow+1: Dougal Matthews <dougal@redhat.com>
+Code-Review+2: Dougal Matthews <dougal@redhat.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 24 Mar 2017 17:35:30 +0000
+Reviewed-on: https://review.openstack.org/449333
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
