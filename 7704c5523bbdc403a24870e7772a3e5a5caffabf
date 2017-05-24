@@ -1,0 +1,8 @@
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Workflow+1: Renat Akhmerov <renat.akhmerov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 24 May 2017 05:39:35 +0000
+Reviewed-on: https://review.openstack.org/467199
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
