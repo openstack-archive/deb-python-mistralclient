@@ -1,0 +1,10 @@
+Code-Review+2: Renat Akhmerov <renat.akhmerov@gmail.com>
+Code-Review+1: Adriano Petrich <apetrich@redhat.com>
+Code-Review+2: Nikolay Mahotkin <nikolay.makhotkin@gmail.com>
+Workflow+1: Nikolay Mahotkin <nikolay.makhotkin@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 11 Jul 2017 14:18:46 +0000
+Reviewed-on: https://review.openstack.org/476110
+Project: openstack/deb-python-mistralclient
+Branch: refs/heads/master
